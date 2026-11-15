@@ -1,0 +1,16 @@
+node_modules/
+artifacts/
+build/
+desktop-dist/
+desktop-app/
+web-app/
+cloudflare-dist/
+.wrangler/
+release/
+dist/
+coverage/
+data/
+.DS_Store
+*.log
+.env*
+!.env.example

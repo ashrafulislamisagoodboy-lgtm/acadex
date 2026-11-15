@@ -1,0 +1,34 @@
+appId: com.acadex.desktop
+productName: Acadex
+electronVersion: 44.9.1
+asar: true
+npmRebuild: false
+
+directories:
+  output: ../release
+
+files:
+  - main.mjs
+  - dist/**/*
+  - package.json
+
+win:
+  icon: icon.png
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+
+nsis:
+  artifactName: ${productName}-${version}-${arch}-Setup.${ext}
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Acadex
+
+portable:
+  artifactName: ${productName}-${version}-${arch}-Portable.${ext}
