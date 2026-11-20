@@ -314,6 +314,7 @@ export default function QuizGame() {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleAnswer(idx)}
                 disabled={pending || selectedOption !== null}
+                data-mark={selectedOption === null ? undefined : isCorrectOption ? 'correct' : isSelected ? 'incorrect' : undefined}
                 className={`answer-line ${statusClass}`}
               >
                 <span className="answer-letter" aria-hidden="true">{'ABCD'[idx]}</span><span>{option}</span>

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, ArrowUpRight, BookOpen, CalendarDays, ListOrdered, Settings } from 'lucide-react';
 import { auth, db, doc, onSnapshot } from '../../lib/local';
 
+import FieldAtlas from '../Common/FieldAtlas';
+
 const index = [
   { path: '/quiz', title: 'Practice library', note: 'Questions by book and chapter', icon: BookOpen },
   { path: '/leaderboard', title: 'League register', note: 'Scores and school standings', icon: ListOrdered },
@@ -27,7 +29,7 @@ export default function Home() {
         <p>Welcome back, {profile?.name || auth.currentUser?.displayName || 'learner'}. Your practice library and school records are here.</p>
         <Link className="desk-cta" to="/quiz">Start a quiz <ArrowRight size={18}/></Link>
       </div>
-      <figure className="desk-plate"><img src="/observatory.svg" alt="Ink drawing of a hilltop observatory"/><figcaption>Plate I &nbsp; · &nbsp; The observatory</figcaption></figure>
+      <FieldAtlas />
     </section>
     <div className="desk-columns"><section><div className="desk-title"><span>01 / Index</span><h2>On your desk</h2></div>
       <div>{index.filter(item => item.path !== '/admin' || profile?.role === 'admin').map(({path,title,note,icon:Icon}, i) => <Link key={path} className="desk-row" to={path}>

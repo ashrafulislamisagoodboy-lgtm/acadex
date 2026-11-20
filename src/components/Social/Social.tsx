@@ -204,7 +204,7 @@ export default function Social() {
               <button type="button" className="min-h-11 px-2 text-butter/40 hover:text-butter/60 transition-all" onClick={prevMonth} aria-label="Go to previous month">
                 {months[(selectedMonth - 1 + 12) % 12]}
               </button>
-              <span className="text-3xl text-butter scale-110">
+              <span key={`${currentYear}-${selectedMonth}`} className="agenda-month-name text-3xl text-butter">
                 {months[selectedMonth]}
               </span>
               <button type="button" className="min-h-11 px-2 text-butter/40 hover:text-butter/60 transition-all" onClick={nextMonth} aria-label="Go to next month">

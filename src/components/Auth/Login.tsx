@@ -13,6 +13,8 @@ import { motion, useReducedMotion } from 'motion/react';
 import { api, login } from '../../lib/local';
 import { cn } from '../../lib/utils';
 
+import FieldAtlas from '../Common/FieldAtlas';
+
 export default function Login() {
   const [needsSetup, setNeedsSetup] = useState<boolean | null>(null);
   const [method, setMethod] = useState<'student' | 'admin'>('student');
@@ -110,7 +112,7 @@ export default function Login() {
         <aside className="portal-cover" aria-label="Acadex field notes">
           <span className="portal-label">Field notes &nbsp; / &nbsp; Vol. 01</span>
           <div className="portal-cover-title">The Study<br /><em>Edition.</em></div>
-          <img className="portal-sketch" src="/observatory.svg" alt="Illustration of a hilltop observatory" />
+          <div className="cover-atlas"><FieldAtlas /></div>
           <p>Chapter quizzes, school events, and your place in the league.</p>
         </aside>
         <motion.section

@@ -24,6 +24,10 @@ app.whenReady().then(async () => {
     await evaluate(`fetch('/api/auth/login', {method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify(${JSON.stringify(login)})}).then(r => { if (!r.ok) throw new Error('Preview login failed'); })`);
     await win.loadURL(base + '/'); await ready('.desk');
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.route-reveal')).animationName"), 'page-in');
+    assert.equal(await evaluate("getComputedStyle(document.querySelector('.star-trace')).animationName"), 'trace-ink');
+    await evaluate(`document.querySelector('[aria-label="Next atlas plate"]').click()`);
+    await ready('.atlas-picture text');
+    assert.equal(await evaluate("document.querySelector('.atlas-caption strong').textContent"), 'The Summer Triangle');
     await mkdir('artifacts', { recursive: true });
     for (const [name, width, height] of [['desktop', 1440, 1000], ['tablet', 768, 1024], ['mobile', 390, 844]]) {
       win.setContentSize(width, height); await wait(400);
@@ -34,6 +38,7 @@ app.whenReady().then(async () => {
     await win.webContents.debugger.sendCommand('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
     await wait(300);
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.route-reveal')).animationName"), 'none');
+    assert.equal(await evaluate("getComputedStyle(document.querySelector('.star-trace')).animationName"), 'none');
     await evaluate("document.querySelector('.mobile-dock a[href=\"/quiz\"]').click()");
     await ready('[data-page="/quiz"]');
     console.log('PASS: responsive desk, page arrival, reduced motion, mobile navigation.');
