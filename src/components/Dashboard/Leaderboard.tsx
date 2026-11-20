@@ -7,7 +7,6 @@ import {
   Medal,
   RefreshCw,
   Search,
-  Sparkles,
   Target,
   Trophy,
   Users,
@@ -38,7 +37,7 @@ const numberFormatter = new Intl.NumberFormat('en-US');
 
 const podiumStyles = {
   1: {
-    card: 'border-amber-300 bg-gradient-to-b from-[#fff8dc] to-[#fee7a4] shadow-[0_24px_70px_rgba(251,191,36,0.25)] sm:-translate-y-7',
+    card: 'honour-card',
     avatar: 'border-amber-400 ring-4 ring-amber-200/70',
     badge: 'bg-amber-400 text-forest',
     order: 'order-1 sm:order-2',
@@ -47,7 +46,7 @@ const podiumStyles = {
     label: 'Champion',
   },
   2: {
-    card: 'border-slate-200 bg-gradient-to-b from-white to-slate-100 shadow-[0_20px_55px_rgba(148,163,184,0.2)]',
+    card: 'honour-card',
     avatar: 'border-slate-300 ring-4 ring-slate-200/70',
     badge: 'bg-slate-300 text-slate-800',
     order: 'order-2 sm:order-1',
@@ -56,7 +55,7 @@ const podiumStyles = {
     label: 'Runner-up',
   },
   3: {
-    card: 'border-orange-200 bg-gradient-to-b from-white to-orange-100 shadow-[0_20px_55px_rgba(194,102,31,0.16)]',
+    card: 'honour-card',
     avatar: 'border-orange-300 ring-4 ring-orange-100',
     badge: 'bg-orange-300 text-orange-950',
     order: 'order-3',
@@ -223,19 +222,17 @@ export default function Leaderboard() {
   return (
     <div className="mx-auto max-w-6xl space-y-7 py-4 pb-12 sm:py-7">
       <section className="glass-card-dark relative overflow-hidden rounded-[2rem] border px-5 py-7 sm:px-8 sm:py-9">
-        <div className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-amber-300/15 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 left-1/3 h-56 w-56 rounded-full bg-emerald-400/10 blur-3xl" />
 
         <div className="relative grid gap-7 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
           <div>
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-butter/20 bg-butter/10 px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.2em] text-butter">
-              <Sparkles size={14} /> Hall of fame
+            <div className="folio-kicker mb-3">
+              Register &nbsp; / &nbsp; School standings
             </div>
             <h1 className="max-w-2xl text-4xl font-black leading-[0.95] tracking-tight text-white sm:text-6xl">
-              Who is leading the <span className="text-amber-300">brain race?</span>
+              League register
             </h1>
             <p className="mt-4 max-w-xl text-sm font-medium leading-relaxed text-butter/70 sm:text-base">
-              Earn Brain Gains, climb the ranks, and make your mark. Every quiz can change the board.
+              Compare quiz records or look up a learner by name.
             </p>
           </div>
 
@@ -254,7 +251,7 @@ export default function Leaderboard() {
             />
             <StatCard
               icon={Target}
-              label="Questions solved"
+              label="Questions answered"
               value={numberFormatter.format(totalQuestions)}
               accent="bg-emerald-300 text-forest"
             />
@@ -279,7 +276,7 @@ export default function Leaderboard() {
         <section aria-labelledby="podium-title">
           <div className="mb-10 flex items-end justify-between sm:mb-12">
             <div>
-              <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-amber-300">This season</p>
+              <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-butter/70">Honour roll</p>
               <h2 id="podium-title" className="mt-1 text-2xl font-black text-white sm:text-3xl">
                 Top performers
               </h2>
@@ -309,7 +306,6 @@ export default function Leaderboard() {
                     to={`/profile/${user.id}`}
                     className={`glass-card group relative block overflow-hidden rounded-[2rem] border p-5 text-forest transition sm:p-6 ${style.card}`}
                   >
-                    <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-white/60 blur-2xl" />
                     <div className="relative">
                       <div className="mb-5 flex items-center justify-between">
                         <span className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-wider ${style.badge}`}>
@@ -355,9 +351,9 @@ export default function Leaderboard() {
         !error && (
           <section className="glass-card-dark rounded-[2rem] border border-dashed px-6 py-16 text-center">
             <Trophy className="mx-auto text-amber-300" size={52} />
-            <h2 className="mt-4 text-2xl font-black text-white">The podium is waiting</h2>
+            <h2 className="mt-4 text-2xl font-black text-white">No results yet</h2>
             <p className="mx-auto mt-2 max-w-md text-sm text-butter/60">
-              Complete a quiz to earn the first Brain Gains and claim the top spot.
+              Learners appear here as they complete quizzes.
             </p>
           </section>
         )

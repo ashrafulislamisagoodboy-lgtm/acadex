@@ -5,22 +5,7 @@ import { db, auth } from '../../lib/local';
 
 import { eventsInRange, localMidnight } from '../../lib/calendar';
 
-const monthColors = [
-  { bg: '#E6D5B3', text: '#4A3022' }, // Shortbread
-  { bg: '#CBA374', text: '#4A3022' }, // Toast
-  { bg: '#D9C29C', text: '#4A3022' }, // Tawny
-  { bg: '#C4A482', text: '#4A3022' }, // Latte
-  { bg: '#E6D5C4', text: '#4A3022' }, // Seaside
-  { bg: '#E6D5B3', text: '#4A3022' }, // Shortbread
-  { bg: '#CBA374', text: '#4A3022' }, // Toast
-  { bg: '#D9C29C', text: '#4A3022' }, // Tawny
-  { bg: '#C4A482', text: '#4A3022' }, // Latte
-  { bg: '#E6D5C4', text: '#4A3022' }, // Seaside
-  { bg: '#E6D5B3', text: '#4A3022' }, // Shortbread
-  { bg: '#CBA374', text: '#4A3022' }, // Toast
-];
-
-const MonthCard = ({ year, month, colorBg, colorText, isSelected, onClick }: { year: number, month: number, colorBg: string, colorText: string, isSelected: boolean, onClick: () => void }) => {
+const MonthCard = ({ year, month, isSelected, onClick }: { year: number, month: number, isSelected: boolean, onClick: () => void }) => {
   const monthDate = new Date(year, month, 1);
   const monthName = monthDate.toLocaleString('default', { month: 'long' });
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -56,10 +41,9 @@ const MonthCard = ({ year, month, colorBg, colorText, isSelected, onClick }: { y
       onClick={onClick}
       aria-pressed={isSelected}
       aria-label={`Open ${monthName} ${year} agenda`}
-      className={`w-full text-left p-4 rounded-3xl border border-white/35 shadow-xl backdrop-blur-2xl transition-all duration-300 ${isSelected ? 'ring-4 ring-butter/50 z-10' : 'hover:border-white/70'}`} 
-      style={{ backgroundColor: `${colorBg}cc`, color: colorText, boxShadow: '0 20px 55px rgba(0, 25, 22, 0.2), inset 0 1px 0 rgba(255,255,255,0.5)' }}
+      className="almanac-month"
     >
-      <h3 className="font-bold mb-4">{monthName}</h3>
+      <h3 className="month-title">{monthName} <small>{String(month + 1).padStart(2, '0')}</small></h3>
       <div className="grid grid-cols-7 text-[11px] text-center opacity-60 mb-2 font-bold">
         <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
       </div>
@@ -172,7 +156,7 @@ export default function Social() {
         <div className="flex items-center gap-3">
           <CalendarIcon className="text-butter" size={32} />
           <div>
-            <p className="text-sm font-bold text-butter/55">School schedule</p>
+            <p className="folio-kicker">Almanac / School schedule</p>
             <h1 className="text-3xl md:text-4xl font-black text-butter">{currentYear} calendar</h1>
           </div>
         </div>
@@ -203,8 +187,6 @@ export default function Social() {
               key={i} 
               year={currentYear} 
               month={i} 
-              colorBg={monthColors[i].bg} 
-              colorText={monthColors[i].text} 
               isSelected={selectedMonth === i}
               onClick={() => handleMonthClick(i)}
             />

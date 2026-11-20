@@ -744,8 +744,9 @@ export default function AdminPanel() {
         )}
       </AnimatePresence>
 
+      <header className="chapter-heading"><span className="folio-kicker">Administration / Records</span><h1>School office</h1><p>Maintain the student register, question bank and calendar.</p></header>
       {/* Tabs */}
-      <div className="glass-card flex gap-2 p-1.5 rounded-[2.5rem] border">
+      <div className="office-tabs glass-card flex flex-wrap gap-1 p-1.5 border">
         <button
           onClick={() => setActiveTab('users')}
           className={cn("flex-1 py-3 rounded-[2rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2", 
@@ -791,10 +792,10 @@ export default function AdminPanel() {
       <AnimatePresence mode="wait">
         {activeTab === 'users' && (
           <motion.div key="users" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-            <h3 className="text-xl font-bold text-butter">Manage Students</h3>
+            <h3 className="text-xl font-bold text-butter">Student register</h3>
             {loading ? <div className="text-center py-8">Loading...</div> : (
               users.map(user => (
-                <div key={user.id} className="card flex items-center justify-between p-4">
+                <div key={user.id} className="card flex flex-wrap items-center justify-between gap-2 p-4">
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="font-bold">{user.name}</p>
@@ -802,7 +803,7 @@ export default function AdminPanel() {
                         <span className="px-2 py-0.5 bg-forest/10 text-forest text-[11px] font-bold rounded-full uppercase tracking-wider">Admin</span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-500">@{user.username} • {user.xp} <b>BRAIN GAINS</b></p>
+                    <p className="text-xs text-gray-500">@{user.username} • {user.xp} XP</p>
                   </div>
                   <div className="flex gap-2">
                     <button

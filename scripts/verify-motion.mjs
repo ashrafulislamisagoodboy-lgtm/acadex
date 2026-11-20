@@ -1,5 +1,5 @@
 import { app, BrowserWindow } from 'electron';
-import { writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import assert from 'node:assert/strict';
 
@@ -22,24 +22,9 @@ app.whenReady().then(async () => {
     const login = { method: 'admin', username: process.env.ACADEX_PREVIEW_USER, password: process.env.ACADEX_PREVIEW_PASSWORD };
     assert.ok(login.username && login.password, 'Set preview credentials');
     await evaluate(`fetch('/api/auth/login', {method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify(${JSON.stringify(login)})}).then(r => { if (!r.ok) throw new Error('Preview login failed'); })`);
-    await evaluate("localStorage.removeItem('acadex-ambient-paused')");
-    await win.loadURL(base + '/');
-    await ready('.progress-orbit__ring');
-    // The hero light intentionally rests for the first 15% of its 14s cycle.
-    await wait(3200);
-    const sample = () => evaluate(`({
-      light: getComputedStyle(document.querySelector('.ambient-light')).transform,
-      orbit: getComputedStyle(document.querySelector('.progress-orbit__ring'), '::after').transform,
-      shine: getComputedStyle(document.querySelector('.home-hero'), '::before').transform
-    })`);
-    const first = await sample(); await wait(500); const second = await sample();
-    for (const key of Object.keys(first)) assert.notEqual(first[key], second[key], key + ' should move');
-    await evaluate("document.querySelector('.effects-toggle').click()"); await wait(100);
-    const paused = await sample(); await wait(500);
-    assert.deepEqual(await sample(), paused, 'All decorative effects pause');
-    await win.loadURL(base + '/'); await ready('.progress-orbit__ring');
-    assert.equal(await evaluate("document.querySelector('.effects-toggle').getAttribute('aria-label')"), 'Resume ambient effects');
-    await evaluate("document.querySelector('.effects-toggle').click()");
+    await win.loadURL(base + '/'); await ready('.desk');
+    assert.equal(await evaluate("getComputedStyle(document.querySelector('.route-reveal')).animationName"), 'page-in');
+    await mkdir('artifacts', { recursive: true });
     for (const [name, width, height] of [['desktop', 1440, 1000], ['tablet', 768, 1024], ['mobile', 390, 844]]) {
       win.setContentSize(width, height); await wait(400);
       assert.ok(await evaluate('document.documentElement.scrollWidth <= window.innerWidth'), name + ' has no horizontal overflow');
@@ -48,17 +33,10 @@ app.whenReady().then(async () => {
     win.webContents.debugger.attach('1.3');
     await win.webContents.debugger.sendCommand('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
     await wait(300);
-    const reduced = await evaluate(`({
-      light: getComputedStyle(document.querySelector('.ambient-light')).animationName,
-      orbit: getComputedStyle(document.querySelector('.progress-orbit__ring'), '::after').display,
-      toggle: getComputedStyle(document.querySelector('.effects-toggle')).display
-    })`);
-    assert.deepEqual(reduced, { light: 'none', orbit: 'none', toggle: 'none' });
-    await win.webContents.debugger.sendCommand('Emulation.setEmulatedMedia', { features: [] });
+    assert.equal(await evaluate("getComputedStyle(document.querySelector('.route-reveal')).animationName"), 'none');
     await evaluate("document.querySelector('.mobile-dock a[href=\"/quiz\"]').click()");
     await ready('[data-page="/quiz"]');
-    assert.equal(await evaluate("getComputedStyle(document.querySelector('.ambient-light')).animationPlayState"), 'paused');
-    console.log('PASS: motion advances, pause freezes all effects and persists, reduced motion disables effects, quiz pauses background, 390/768/1440px layouts fit.');
+    console.log('PASS: responsive desk, page arrival, reduced motion, mobile navigation.');
   } catch (error) { console.error(error); win.destroy(); app.exit(1); return; }
   win.destroy(); app.quit();
 });

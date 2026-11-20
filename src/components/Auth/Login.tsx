@@ -110,15 +110,7 @@ export default function Login() {
         <aside className="portal-cover" aria-label="Acadex field notes">
           <span className="portal-label">Field notes &nbsp; / &nbsp; Vol. 01</span>
           <div className="portal-cover-title">The Study<br /><em>Edition.</em></div>
-          <svg className="portal-sketch" viewBox="0 0 320 140" fill="none" aria-hidden="true">
-            <g stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path fill="#d9e6bb" d="m30 72 102-47 144 33-99 54z" />
-              <path d="m30 72 1 15 145 41 101-54-1-16m-99 54-1 16M38 82l132 37m18-3 80-43" />
-              <path fill="#f8f6e9" d="m53 49 87-36 118 26-85 44z" />
-              <path fill="#f8f6e9" d="m53 49 1 14 118 35 86-44V39l-85 44z" />
-              <path d="m173 83-1 15M65 59l97 29m22-4 64-33m-144-8 41-18 45 10-41 19z" />
-            </g>
-          </svg>
+          <img className="portal-sketch" src="/observatory.svg" alt="Illustration of a hilltop observatory" />
           <p>Chapter quizzes, school events, and your place in the league.</p>
         </aside>
         <motion.section

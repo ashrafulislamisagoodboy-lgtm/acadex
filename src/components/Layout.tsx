@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, User, Trophy, Settings, LogOut, CalendarDays, Sparkles } from 'lucide-react';
+import { Home, User, Trophy, Settings, LogOut, CalendarDays, BookOpen } from 'lucide-react';
 import { auth, db, signOut, doc, onSnapshot, type LocalUser } from '../lib/local';
 import { useState, useEffect } from 'react';
 import { cn } from '../lib/utils';
@@ -32,9 +32,9 @@ export default function Layout({ user }: LayoutProps) {
   };
 
   const navItems = [
-    { path: '/', icon: Home, label: 'Home' },
+    { path: '/', icon: Home, label: 'Desk' },
     { path: '/leaderboard', icon: Trophy, label: 'Ranks' },
-    { path: '/quiz', icon: Sparkles, label: 'Quiz' },
+    { path: '/quiz', icon: BookOpen, label: 'Quiz' },
     { path: '/social', icon: CalendarDays, label: 'Calendar' },
     ...(isAdmin ? [{ path: '/admin', icon: Settings, label: 'Admin' }] : []),
   ];
@@ -49,10 +49,10 @@ export default function Layout({ user }: LayoutProps) {
       <header className="app-header">
         <div className="app-header__inner">
           <Link to="/" className="brand-lockup" aria-label="Acadex home">
-            <span className="brand-mark" aria-hidden="true">A</span>
+            <span className="brand-mark" aria-hidden="true"><BookOpen size={21} /></span>
             <span>
               <strong>Acadex</strong>
-              <small>Learning league</small>
+              <small>Campus handbook</small>
             </span>
           </Link>
 

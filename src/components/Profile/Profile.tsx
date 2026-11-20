@@ -248,7 +248,7 @@ function ProfileView({ uid }: { uid: string }) {
           {userData.bannerUrl ? (
             <img src={userData.bannerUrl} alt="Banner" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+            <div className="record-banner"><span>Acadex &nbsp; / &nbsp; Learner record</span></div>
           )}
           
           {isOwnProfile && (
@@ -290,7 +290,7 @@ function ProfileView({ uid }: { uid: string }) {
           <div className="flex-1 card flex flex-col items-center justify-center py-6 text-center bg-butter border-forest/10">
             <Trophy className="text-forest mb-2" size={24} />
             <p className="text-2xl font-black text-forest">{userData.xp}</p>
-            <p className="text-[11px] font-bold uppercase text-forest/40 tracking-widest">Total <b>BRAIN GAINS</b></p>
+            <p className="text-[11px] font-bold uppercase text-forest/40 tracking-widest">Total XP</p>
           </div>
           <div className="flex-1 card flex flex-col items-center justify-center py-6 text-center bg-butter border-forest/10">
             <Star className="text-yellow-600 mb-2" size={24} />
