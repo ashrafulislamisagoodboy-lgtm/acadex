@@ -1079,7 +1079,7 @@ export default function AdminPanel() {
         {activeTab === 'books' && (
           <motion.div key="books" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="max-w-2xl mx-auto">
             <div className="card overflow-hidden border-2 border-forest/5 shadow-2xl shadow-forest/5">
-              <div className="bg-forest p-8 text-white relative overflow-hidden">
+              <div className="glass-inset-dark p-8 text-white relative overflow-hidden">
                 <div className="relative z-10 space-y-2">
                   <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
                     <Sparkles size={24} className="text-yellow-300" />
@@ -1095,7 +1095,7 @@ export default function AdminPanel() {
                 </div>
               </div>
 
-              <form onSubmit={handleGenerateAIQuiz} className="p-8 space-y-6 bg-white">
+              <form onSubmit={handleGenerateAIQuiz} className="glass-inset p-8 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Book Name</label>

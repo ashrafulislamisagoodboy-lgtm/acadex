@@ -390,7 +390,7 @@ export default function Leaderboard() {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Search by name or username"
-                  className="h-12 w-full rounded-xl border border-forest/15 bg-white/65 pl-11 pr-10 text-sm font-semibold outline-none transition placeholder:text-forest/35 focus:border-forest focus:ring-4 focus:ring-forest/10"
+                  className="glass-control h-12 w-full rounded-xl border border-forest/15 bg-white/65 pl-11 pr-10 text-sm font-semibold outline-none transition placeholder:text-forest/35 focus:border-forest focus:ring-4 focus:ring-forest/10"
                 />
                 {search && (
                   <button
@@ -407,7 +407,7 @@ export default function Leaderboard() {
               <select
                 value={grade}
                 onChange={(event) => setGrade(event.target.value)}
-                className="h-12 rounded-xl border border-forest/15 bg-white/65 px-4 text-sm font-bold outline-none transition focus:border-forest focus:ring-4 focus:ring-forest/10"
+                className="glass-control h-12 rounded-xl border border-forest/15 bg-white/65 px-4 text-sm font-bold outline-none transition focus:border-forest focus:ring-4 focus:ring-forest/10"
                 aria-label="Filter by grade"
               >
                 <option value="all">All grades</option>
@@ -481,7 +481,7 @@ export default function Leaderboard() {
                       to={`/profile/${user.id}`}
                       className={`group grid grid-cols-[40px_1fr_auto] items-center gap-3 rounded-2xl border p-3 transition sm:grid-cols-[52px_minmax(0,1fr)_130px_120px_24px] sm:gap-4 sm:p-4 ${
                         isCurrentUser
-                          ? 'border-forest/35 bg-white shadow-[0_8px_30px_rgba(0,54,49,0.1)]'
+                          ? 'glass-inset border-forest/35'
                           : 'border-transparent hover:border-forest/10 hover:bg-white/60'
                       }`}
                     >

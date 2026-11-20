@@ -4,6 +4,7 @@
   --color-forest: #172943; --color-butter: #f1f6ff;
   --sheet: #eff4fc; --chrome: #eef4fc; --smoke: #263552;
   --clear-pane: #eff4fc; --reading-pane: #f6f8ff;
+  --pane-frame: #26384a; --control-pane: #edf4f7; --pane-glint: none;
   --lens: none; --lip: inset 0 1px 0 #ffffffb8, inset 0 -1px 0 #ffffff35;
   --float: var(--lip), 0 12px 34px -16px #24366566;
   --ui: -apple-system, BlinkMacSystemFont, 'Figtree Variable', 'Segoe UI', sans-serif;
@@ -13,13 +14,16 @@
     --sheet: rgb(249 252 255 / .48);
     --chrome: rgb(246 250 255 / .36);
     --clear-pane: linear-gradient(120deg, #ffffff55, #ffffff17 50%, #ffffff30);
-    --reading-pane: rgb(249 252 255 / .78);
+    --reading-pane: rgb(249 252 255 / .69);
+    --pane-frame: rgb(14 31 40 / .60);
+    --control-pane: rgb(251 254 255 / .68);
+    --pane-glint: linear-gradient(135deg, #ffffff36 0%, #ffffff04 38%, transparent 65%, #c5eaff18 100%);
     --smoke: rgb(31 47 60 / .55);
     --lens: blur(3px) saturate(112%);
   }
 }
 @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-  :root { --sheet: #f6f8ff; --chrome: #f4f7ff; --smoke: #223351; --clear-pane: #f6f8ff; --reading-pane: #f6f8ff; --lens: none; }
+  :root { --sheet: #f6f8ff; --chrome: #f4f7ff; --smoke: #223351; --clear-pane: #f6f8ff; --reading-pane: #f6f8ff; --pane-frame: #26384a; --control-pane: #fff; --pane-glint:none; --lens: none; }
 }
 body { background: #1c2a47; }
 .auth-page, .app-shell { isolation:isolate; position:relative; background:transparent; }
@@ -28,7 +32,7 @@ body { background: #1c2a47; }
 #root { isolation:isolate; }
 .live-wallpaper { position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden; background:linear-gradient(#85bac7 0 44%,#568345 55%,#254c39); }
 .meadow-scene { position:absolute; inset:-2%; background:url('/meadow.jpg') 52% center / cover no-repeat; }
-.live-wallpaper::after { content:''; position:absolute; inset:0; background:linear-gradient(#112526cc,#102620b8); }
+.live-wallpaper::after { content:''; position:absolute; inset:0; background:linear-gradient(#11252630,#10262048); }
 #root:has(.auth-page, .desk) .live-wallpaper::after { opacity:0; }
 .auth-page .portal-footer { color:#fff; text-shadow:0 1px 4px #142e1a; border-color:#ffffff75; }
 @media (prefers-reduced-motion:no-preference) {
@@ -96,6 +100,32 @@ body { background: #1c2a47; }
 .desk-columns :focus-visible { outline-color:white; }
 .app-shell:not(:has(.desk)) .app-header__inner, .mobile-dock { background:var(--reading-pane); }
 .portal-cover-title { text-shadow:0 1px 3px #ffffff80; }
+
+/* Every authenticated workspace sits on the same smoked-glass frame. Keep
+   the frame free of filters/transforms so fixed dialogs remain viewport-sized. */
+.route-reveal:not([data-page='/']) {
+  margin-block: .85rem 1.25rem; padding:clamp(.8rem,2vw,1.65rem);
+  background:var(--pane-glint), var(--pane-frame); border:1px solid #ffffff64;
+  border-radius:26px; box-shadow:var(--float);
+}
+:is(.card,.glass-card,.glass-card-dark,.almanac-month,.question-sheet,.field-atlas,.auth-card) {
+  background-image:var(--pane-glint);
+}
+/* Inset surfaces share a rim instead of stacking expensive backdrop filters. */
+:is(.input-field,.glass-control,.answer-line:not([data-mark]),.practice-rule,.office-tabs,.account-switcher) {
+  background-color:var(--control-pane); background-image:var(--pane-glint);
+  border:1px solid #ffffff9c; box-shadow:var(--lip); color:var(--ink);
+}
+.input-field:focus, .glass-control:focus-visible { outline:2px solid #275992; outline-offset:1px; }
+.practice-rule { padding:.7rem 1rem; border-radius:16px; }
+.answer-line[data-mark] { box-shadow:var(--lip); }
+.answer-line:not(:disabled):hover, .glass-control:hover { border-color:#6585a1; }
+.glass-inset { background:var(--pane-glint), var(--sheet); box-shadow:var(--lip); }
+.glass-inset-dark { background:var(--pane-glint), var(--pane-frame); box-shadow:var(--lip); }
+.glass-card-dark[role='dialog'] { background-color:var(--pane-frame); }
+.record-banner { background-color:var(--sheet); }
+.record-banner span { display:inline-block; background:var(--reading-pane); padding:.2rem .65rem; border-radius:999px; box-shadow:var(--lip); }
+@media (max-width:700px) { .route-reveal:not([data-page='/']) { border-radius:20px; padding:.65rem; } }
 
 /* Tab turn: the departing glyph is the front of the coin, the destination
    is its reverse. The lens lives outside the route, so a new tap can replace it. */

@@ -3,6 +3,7 @@
 Design the interface like the handbook a student might keep in a schoolbag. Use specific labels for real records, rather than slogans or invented activity.
 
 - **Materials:** `src/glass.css` layers frosted sheets and floating navigation over a gently panning meadow photograph. The header pause control remembers its setting; the landscape holds still when the tab is hidden or reduced motion is requested. Use an opaque surface when blur is unsupported or reduced transparency is requested.
+- **Inside pages:** smoked frames carry light text on ranks, quizzes, profiles, the calendar and admin. Use the inset glass material for fields and panels inside cards; keep quiz result colors and QR codes distinct.
 - **Type:** System sans-serif for large titles, Figtree for reading, Sora for controls, system monospace for folios, dates and exercise numbers. Avoid uppercase paragraphs.
 - **Structure:** the desk has an illustrated cover, a ruled index, and a practice log. The register is for comparing people, the calendar for comparing dates, and the office for editing records. Use their actual data shapes rather than repeating the dashboard layout.
 - **Art:** The field atlas pairs two traced star charts with the engraved `public/observatory.svg`. Readers turn plates themselves; do not advance them on a timer. Keep its fine linework legible; omit it when a form needs the space.
