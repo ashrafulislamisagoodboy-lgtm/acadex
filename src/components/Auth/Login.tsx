@@ -5,10 +5,9 @@ import {
   Eye,
   EyeOff,
   GraduationCap,
-  LogIn,
   RefreshCw,
   Shield,
-  Trophy,
+  ArrowUpRight,
 } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { api, login } from '../../lib/local';
@@ -31,7 +30,6 @@ export default function Login() {
     try {
       const status = await api('/status');
       setNeedsSetup(Boolean(status.needsSetup));
-      if (!status.needsSetup) setMethod('admin');
     } catch (statusError) {
       setNeedsSetup(null);
       setError((statusError as Error).message);
@@ -104,44 +102,35 @@ export default function Login() {
 
   return (
     <main className="auth-page">
-      <motion.section
-        className="auth-story"
-        initial={reduceMotion ? false : { opacity: 0, x: -18 }}
-        animate={reduceMotion ? undefined : { opacity: 1, x: 0 }}
-        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <div className="brand-lockup brand-lockup--auth">
-          <span className="brand-mark" aria-hidden="true">A</span>
-          <span><strong>Acadex</strong><small>Learning league</small></span>
-        </div>
-        <div className="auth-story__message">
-          <p className="context-line context-line--light">Learn. Recall. Rise.</p>
-          <h1>Turn schoolwork into visible progress.</h1>
-          <p>Practice at your pace, collect XP, and see how every answer moves you forward.</p>
-        </div>
-        <div className="auth-story__proof" aria-label="Acadex features">
-          <div><BookOpen size={20} aria-hidden="true" /><span>Focused practice by book and chapter</span></div>
-          <div><Trophy size={20} aria-hidden="true" /><span>A fair, live learning league</span></div>
-        </div>
-      </motion.section>
-
-      <section className="auth-panel">
-        <div className="auth-mobile-brand">
-          <span className="brand-mark" aria-hidden="true">A</span>
-          <span><strong>Acadex</strong><small>Learning league</small></span>
-        </div>
-        <motion.div
-          className="auth-card glass-card"
-          initial={reduceMotion ? false : { opacity: 0, y: 18 }}
-          animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-          transition={{ delay: 0.08, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      <header className="portal-masthead">
+        <span className="portal-brand"><BookOpen size={24} aria-hidden="true" /> Acadex</span>
+        <span className="portal-label">School learning league</span>
+      </header>
+      <div className="portal-spread">
+        <aside className="portal-cover" aria-label="Acadex field notes">
+          <span className="portal-label">Field notes &nbsp; / &nbsp; Vol. 01</span>
+          <div className="portal-cover-title">The Study<br /><em>Edition.</em></div>
+          <svg className="portal-sketch" viewBox="0 0 320 140" fill="none" aria-hidden="true">
+            <g stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path fill="#d9e6bb" d="m30 72 102-47 144 33-99 54z" />
+              <path d="m30 72 1 15 145 41 101-54-1-16m-99 54-1 16M38 82l132 37m18-3 80-43" />
+              <path fill="#f8f6e9" d="m53 49 87-36 118 26-85 44z" />
+              <path fill="#f8f6e9" d="m53 49 1 14 118 35 86-44V39l-85 44z" />
+              <path d="m173 83-1 15M65 59l97 29m22-4 64-33m-144-8 41-18 45 10-41 19z" />
+            </g>
+          </svg>
+          <p>Chapter quizzes, school events, and your place in the league.</p>
+        </aside>
+        <motion.section
+          className="auth-card"
+          aria-labelledby="portal-heading"
+          initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
         >
-          <div className="auth-card__icon" aria-hidden="true">
-            {needsSetup ? <Shield size={26} /> : <GraduationCap size={28} />}
-          </div>
+          <div className="portal-label portal-card-label"><span className="portal-dot" /> Campus access</div>
           <div className="auth-card__heading">
-            <h2>{needsSetup ? 'Create the first administrator' : 'Welcome back'}</h2>
-            <p>{needsSetup ? 'Set up the account that will manage your school.' : 'Choose your account type, then enter your details.'}</p>
+            <h1 id="portal-heading">{needsSetup ? 'Open your school.' : 'Welcome back.'}</h1>
+            <p>{needsSetup ? 'Create the first administrator account to get your school started.' : 'Sign in to your Acadex account.'}</p>
           </div>
 
           {needsSetup === false && (
@@ -154,6 +143,7 @@ export default function Login() {
                   aria-pressed={method === value}
                   className={cn(method === value && 'is-active')}
                 >
+                  {value === 'student' ? <GraduationCap size={17} aria-hidden="true" /> : <Shield size={16} aria-hidden="true" />}
                   {value === 'student' ? 'Student' : 'Administrator'}
                 </button>
               ))}
@@ -201,8 +191,8 @@ export default function Login() {
                 </div>
               )}
               <button className="btn-primary btn-lg w-full" disabled={loading}>
-                <LogIn size={18} aria-hidden="true" />
-                {loading ? 'Signing in…' : needsSetup ? 'Create administrator' : 'Sign in'}
+                {loading ? (needsSetup ? 'Creating account…' : 'Signing in…') : needsSetup ? 'Create administrator' : 'Sign in'}
+                <ArrowUpRight size={18} aria-hidden="true" />
               </button>
             </form>
           )}
@@ -222,9 +212,9 @@ export default function Login() {
               )}
             </div>
           )}
-        </motion.div>
-        <p className="auth-footnote">Your school data stays inside Acadex.</p>
-      </section>
+        </motion.section>
+      </div>
+      <footer className="portal-footer"><span>ACADEX</span><span>Student &amp; staff portal</span></footer>
     </main>
   );
 }
