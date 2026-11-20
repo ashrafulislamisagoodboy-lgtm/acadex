@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ArrowUpRight, BookOpen, CalendarDays, ListOrdered, Settings } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, BookOpen, CalendarDays, Mountain, Settings } from 'lucide-react';
 import { auth, db, doc, onSnapshot } from '../../lib/local';
 
 import FieldAtlas from '../Common/FieldAtlas';
 
 const index = [
   { path: '/quiz', title: 'Practice library', note: 'Questions by book and chapter', icon: BookOpen },
-  { path: '/leaderboard', title: 'League register', note: 'Scores and school standings', icon: ListOrdered },
+  { path: '/leaderboard', title: 'Summit League', note: 'Scores and school standings', icon: Mountain },
   { path: '/social', title: 'Term calendar', note: 'Dates from the school office', icon: CalendarDays },
   { path: '/admin', title: 'School office', note: 'Students, books and records', icon: Settings },
 ];
