@@ -31,12 +31,12 @@ app.whenReady().then(async () => {
     if (await evaluate("document.querySelector('.wallpaper-control').getAttribute('aria-label') === 'Resume background motion'")) {
       await evaluate("document.querySelector('.wallpaper-control').click()");
     }
-    const tidePosition = () => evaluate("getComputedStyle(document.querySelector('.tide-high')).transform");
-    const moving = await tidePosition(); await wait(1000);
-    assert.notEqual(await tidePosition(), moving, 'The live wallpaper moves');
+    const meadowPosition = () => evaluate("getComputedStyle(document.querySelector('.meadow-scene')).transform");
+    const moving = await meadowPosition(); await wait(1000);
+    assert.notEqual(await meadowPosition(), moving, 'The live wallpaper moves');
     await evaluate("document.querySelector('.wallpaper-control').click()"); await wait(80);
-    const paused = await tidePosition(); await wait(250);
-    assert.equal(await tidePosition(), paused, 'Pause holds the current frame');
+    const paused = await meadowPosition(); await wait(250);
+    assert.equal(await meadowPosition(), paused, 'Pause holds the current frame');
     await win.loadURL(base + '/'); await ready('.desk');
     assert.equal(await evaluate("document.querySelector('.wallpaper-control').getAttribute('aria-label')"), 'Resume background motion');
     await evaluate("document.querySelector('.wallpaper-control').click()");
@@ -57,7 +57,7 @@ app.whenReady().then(async () => {
     await wait(300);
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.route-reveal')).animationName"), 'none');
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.star-trace')).animationName"), 'none');
-    assert.equal(await evaluate("getComputedStyle(document.querySelector('.tide-high')).animationName"), 'none');
+    assert.equal(await evaluate("getComputedStyle(document.querySelector('.meadow-scene')).animationName"), 'none');
     await evaluate("document.querySelector('.mobile-dock a[href=\"/quiz\"]').click()");
     await ready('[data-page="/quiz"]');
     assert.equal(await evaluate("document.querySelector('.tab-turn') === null"), true);

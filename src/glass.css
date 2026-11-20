@@ -16,24 +16,20 @@
 body { background: #1c2a47; }
 .auth-page, .app-shell { isolation:isolate; position:relative; background:transparent; }
 .app-shell:has(.desk) { background:transparent; }
-/* Keep a single tide running across route changes. Glass panels sample the
-   moving layers behind them; controls and reading surfaces stay still. */
+/* The photograph sits outside the route so the hills stay continuous between tabs. */
 #root { isolation:isolate; }
-.live-wallpaper { position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden; background:#bfcee9; }
-.live-wallpaper svg { width:100%; height:100%; display:block; }
-.live-wallpaper::after { content:''; position:absolute; inset:0; background:linear-gradient(#111c38d9,#12203de8); }
+.live-wallpaper { position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden; background:linear-gradient(#85bac7 0 44%,#568345 55%,#254c39); }
+.meadow-scene { position:absolute; inset:-2%; background:url('/meadow.jpg') 52% center / cover no-repeat; }
+.live-wallpaper::after { content:''; position:absolute; inset:0; background:linear-gradient(#112526cc,#102620b8); }
 #root:has(.auth-page, .desk) .live-wallpaper::after { opacity:0; }
-.tide { transform-origin:720px 500px; }
+.auth-page .portal-footer { color:#fff; text-shadow:0 1px 4px #142e1a; border-color:#ffffff75; }
 @media (prefers-reduced-motion:no-preference) {
-  .tide { animation:tide-flow ease-in-out infinite alternate; }
-  .tide-high { --drift-x:115px; --drift-y:78px; --tilt:6deg; animation-duration:12s; animation-delay:-3s; }
-  .tide-mid { --drift-x:-95px; --drift-y:-100px; --tilt:-4deg; animation-duration:17s; animation-delay:-11s; }
-  .tide-near { --drift-x:100px; --drift-y:66px; --tilt:3deg; animation-duration:14s; animation-delay:-6s; }
-  .live-wallpaper[data-paused='true'] .tide { animation-play-state:paused; }
+  .meadow-scene { animation:meadow-pan 22s ease-in-out -6s infinite alternate; }
+  .live-wallpaper[data-paused='true'] .meadow-scene { animation-play-state:paused; }
 }
-@keyframes tide-flow {
-  from { transform:translate(0,0) rotate(0); }
-  to { transform:translate(var(--drift-x),var(--drift-y)) rotate(var(--tilt)); }
+@keyframes meadow-pan {
+  from { transform:translate3d(-.8%,.4%,0) scale(1.01); }
+  to { transform:translate3d(.8%,-.4%,0) scale(1.045); }
 }
 .portal-tools, .wallpaper-control { display:flex; align-items:center; }
 .portal-tools { gap:.65rem; }
