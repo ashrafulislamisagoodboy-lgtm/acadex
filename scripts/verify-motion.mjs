@@ -46,6 +46,10 @@ app.whenReady().then(async () => {
       assert.ok(await evaluate('document.documentElement.scrollWidth <= window.innerWidth'), name + ' has no horizontal overflow');
       await writeFile(resolve('artifacts', 'acadex-motion-' + name + '.png'), (await win.webContents.capturePage()).toPNG());
     }
+    await evaluate(`document.querySelector('.mobile-dock a[href="/leaderboard"]').click()`);
+    await ready('.tab-turn__coin');
+    assert.equal(await evaluate("document.querySelector('.tab-turn__title').textContent"), 'Ranks');
+    assert.equal(await evaluate("getComputedStyle(document.querySelector('.tab-turn__coin')).animationName"), 'turn-coin');
     win.webContents.debugger.attach('1.3');
     await win.webContents.debugger.sendCommand('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
     await wait(300);
@@ -54,7 +58,8 @@ app.whenReady().then(async () => {
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.tide-high')).animationName"), 'none');
     await evaluate("document.querySelector('.mobile-dock a[href=\"/quiz\"]').click()");
     await ready('[data-page="/quiz"]');
-    console.log('PASS: responsive desk, page arrival, reduced motion, mobile navigation.');
+    assert.equal(await evaluate("document.querySelector('.tab-turn') === null"), true);
+    console.log('PASS: responsive desk, tab turn, reduced motion, mobile navigation.');
   } catch (error) { console.error(error); win.destroy(); app.exit(1); return; }
   win.destroy(); app.quit();
 });

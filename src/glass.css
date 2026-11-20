@@ -75,3 +75,26 @@ body { background: #1c2a47; }
 .question-sheet { color:var(--ink); }.quiz-stamp { border-radius:18px; }.chapter-heading p,.chapter-heading .folio-kicker { color:#d6e1f4; }
 .app-header :focus-visible,.auth-page :focus-visible,.desk :focus-visible { outline-color:#124ca6; }
 @media (max-width:700px) { .app-header { padding-inline:.5rem; }.portal-cover { border-bottom:1px solid #fff8; }.desk-columns { gap:1rem; }.desk-cover,.portal-spread { border-radius:21px; } }
+
+/* Tab turn: the departing glyph is the front of the coin, the destination
+   is its reverse. The lens lives outside the route, so a new tap can replace it. */
+.tab-turn { position:fixed; z-index:75; left:50%; top:calc(5.4rem + env(safe-area-inset-top)); translate:-50% 0; pointer-events:none; }
+.tab-turn__lens { display:flex; align-items:center; gap:.6rem; padding:.35rem 1.1rem .35rem .35rem; border:1px solid #fffc; border-radius:999px; color:var(--ink); background:var(--sheet); box-shadow:var(--float); backdrop-filter:var(--lens); -webkit-backdrop-filter:var(--lens); perspective:220px; }
+.tab-turn__coin { position:relative; display:block; width:36px; height:36px; transform-style:preserve-3d; }
+.tab-turn__face { position:absolute; inset:0; display:grid; place-items:center; border-radius:50%; border:1px solid #ffffffc9; background:linear-gradient(145deg,#fff,#d7dfed); backface-visibility:hidden; -webkit-backface-visibility:hidden; }
+.tab-turn__back { transform:rotateY(180deg); background:var(--turn-tint); color:white; box-shadow:inset 0 1px 3px #fff8; }
+.tab-turn__title { font:700 .95rem/1 var(--ui); letter-spacing:-.025em; }
+@media (max-width:1023px) { .tab-turn { top:auto; bottom:calc(6.1rem + env(safe-area-inset-bottom)); } }
+@media (prefers-reduced-motion:no-preference) {
+  .tab-turn__lens { animation:turn-lens 760ms both; }
+  .tab-turn__coin { animation:turn-coin 440ms 45ms cubic-bezier(.22,.7,.16,1) both; }
+  .tab-turn__title { animation:turn-caption 240ms 95ms ease-out both; }
+}
+@keyframes turn-lens {
+  0% { opacity:0; transform:translateX(calc(-18px * var(--turn-direction))) scale(.87); }
+  22%, 75% { opacity:1; transform:none; }
+  100% { opacity:0; transform:translateX(calc(10px * var(--turn-direction))) scale(.96); }
+}
+@keyframes turn-coin { to { transform:rotateY(calc(180deg * var(--turn-direction))); } }
+@keyframes turn-caption { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+@media (prefers-reduced-motion:reduce) { .tab-turn { display:none; } }

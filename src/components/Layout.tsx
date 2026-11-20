@@ -1,9 +1,10 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, User, Trophy, Settings, LogOut, CalendarDays, BookOpen } from 'lucide-react';
+import { User, LogOut, BookOpen } from 'lucide-react';
 import { auth, db, signOut, doc, onSnapshot, type LocalUser } from '../lib/local';
 import { useState, useEffect } from 'react';
 import { cn } from '../lib/utils';
 
+import TabTurn, { sections } from './Common/TabTurn';
 import { WallpaperControl } from './Common/LiveWallpaper';
 
 interface LayoutProps {
@@ -33,15 +34,10 @@ export default function Layout({ user }: LayoutProps) {
     navigate('/login');
   };
 
-  const navItems = [
-    { path: '/', icon: Home, label: 'Desk' },
-    { path: '/leaderboard', icon: Trophy, label: 'Ranks' },
-    { path: '/quiz', icon: BookOpen, label: 'Quiz' },
-    { path: '/social', icon: CalendarDays, label: 'Calendar' },
-    ...(isAdmin ? [{ path: '/admin', icon: Settings, label: 'Admin' }] : []),
-  ];
-
-  const isCurrent = (path: string) => path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
+  const navItems = sections.filter(item => item.path !== '/profile' && (item.path !== '/admin' || isAdmin));
+  const sectionPath = '/' + (location.pathname.split('/')[1] || '');
+  const section = sections.find(item => item.path === sectionPath) ?? sections[0];
+  const isCurrent = (path: string) => path === section.path;
   const displayName = userData?.name || user?.displayName || 'Learner';
 
   return (
@@ -97,6 +93,8 @@ export default function Layout({ user }: LayoutProps) {
           </div>
         </div>
       </header>
+
+      <TabTurn section={section} />
 
       <main id="main-content" className="app-main" tabIndex={-1}>
         <div key={location.pathname} className="route-reveal" data-page={location.pathname}>
