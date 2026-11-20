@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowUpRight, Flag, Mountain, RefreshCw, Search } from 'lucide-react';
-import './summit.css';
+import { ArrowUpRight, Crown, RefreshCw, Search } from 'lucide-react';
+import './podium.css';
 import { Link } from 'react-router-dom';
 import { auth, collection, db, getDocs, limit, orderBy, query } from '../../lib/local';
 
@@ -35,7 +35,7 @@ const getInitials = (user: LeaderboardUser) =>
 
 const getLevel = (xp = 0) => Math.floor(xp / 100) + 1;
 
-const Avatar = ({ user }: { user: LeaderboardUser }) => <span className="summit-avatar" aria-hidden="true">
+const Avatar = ({ user }: { user: LeaderboardUser }) => <span className="ranks-avatar" aria-hidden="true">
   {user.photoUrl ? <img alt="" src={user.photoUrl} /> : getInitials(user)}
 </span>;
 
@@ -118,7 +118,6 @@ export default function Leaderboard() {
   }, [grade, overallRanking, search, sortMode]);
 
   const topThree = overallRanking.slice(0, 3);
-  const topScore = overallRanking[0]?.xp || 0;
   const totalQuestions = users.reduce((sum, user) => sum + (user.totalQuestionsAttended || 0), 0);
   const hasFilters = Boolean(search.trim()) || grade !== 'all' || sortMode !== 'xp';
   const currentUserId = auth.currentUser?.uid;
@@ -132,56 +131,47 @@ export default function Leaderboard() {
   const self = overallRanking.find(user => (user.uid || user.id) === currentUserId);
   const myRank = self ? rankById.get(self.id)! : null;
   const ahead = myRank && myRank > 1 ? overallRanking[myRank - 2] : null;
-  const lead = topThree[0];
   const num = (value = 0) => numberFormatter.format(value);
 
-  if (loading) return <p className="summit-status" role="status">Reading the league standings…</p>;
+  if (loading) return <p className="ranks-status" role="status">Reading the league standings…</p>;
 
-  return <div className="summit-board">
-    <header className="summit-cover">
-      <div className="summit-intro">
-        <p className="summit-kicker"><Mountain size={18} /> Acadex / School standings</p>
-        <h1>Summit <em>League.</em></h1>
-        <p>One correct answer, one XP. Follow the climb from base camp to the summit.</p>
-        <div className="summit-coordinates"><span>{num(users.length)} ranked</span><span>{num(totalQuestions)} answers logged</span></div>
-      </div>
-      <figure className="summit-map"><img src="/summit.svg" alt=""/><figcaption>Plate 02 &nbsp; / &nbsp; The ascent</figcaption></figure>
-    </header>
-
-    {error && <div className="summit-status" role="alert">{error} <button disabled={refreshing} onClick={() => void loadLeaderboard(true)}>Retry</button></div>}
+  return <div className="ranks-board">
+    <section className="podium-theatre" aria-labelledby="podium-title">
+      <header className="podium-heading"><div><p className="ranks-kicker">Acadex honours</p><h1 id="podium-title">The Podium</h1></div><span>All-time XP</span></header>
+      <ol className="podium-stage" aria-label="Top three by experience points">
+        {[0, 1, 2].map(i => {
+          const user = topThree[i];
+          const face = <><span className="podium-rim" aria-hidden="true"/><span className="podium-place" aria-hidden="true">{i === 0 ? <Crown size={18}/> : null}{['I','II','III'][i]}</span>
+            <strong className="podium-etch">{user ? getDisplayName(user) : 'Unclaimed'}</strong>
+            <small>{user ? `${num(user.xp)} XP` : 'Open place'}</small></>;
+          return <li key={i} className="podium-step" data-place={i+1} data-empty={!user}>
+            {user ? <Link className="podium-crystal" to={`/profile/${user.id}`} aria-label={`Rank ${i+1}: ${getDisplayName(user)}, ${num(user.xp)} XP. View profile.`}>{face}</Link>
+              : <div className="podium-crystal" aria-label={`Place ${i+1} unclaimed`}>{face}</div>}
+          </li>;
+        })}
+      </ol>
+      <div className="podium-ledger"><span>{num(users.length)} ranked</span><span>{num(totalQuestions)} answers logged</span></div>
+    </section>
+    {error && <div className="ranks-status" role="alert">{error} <button disabled={refreshing} onClick={() => void loadLeaderboard(true)}>Retry</button></div>}
     {(!error || users.length > 0) && <>
-      <div className="summit-spread">
-        <section className="summit-honours" aria-labelledby="summit-leaders">
-          <p className="summit-kicker"><Flag size={15}/> Ridge markers / 01—03</p><h2 id="summit-leaders">At the summit</h2>
-          {lead ? <ol>{topThree.map((u,i) => <li key={u.id}>
-            <Link to={`/profile/${u.id}`} className="summit-medallist">
-              <span className="summit-pin" aria-label={`Rank ${i+1}`}>{String(i+1).padStart(2,'0')}</span>
-              <div><small>{['Flag bearer','Second ascent','Third ascent'][i]}</small><strong>{getDisplayName(u)}</strong></div>
-              <b>{num(u.xp)} <small>XP</small></b><ArrowUpRight size={17}/>
-            </Link>
-          </li>)}</ol> : <p>No ranked profiles yet.</p>}
-        </section>
-        <section className="summit-pass" aria-labelledby="pass-title">
-          <p className="summit-kicker">Personal field pass</p><h2 id="pass-title">Your position</h2>
-          <div className="summit-position"><strong>{myRank ? `#${myRank}` : '—'}</strong><span>{self ? `Level ${getLevel(self.xp)} · ${num(self.xp)} XP` : 'Outside this board'}</span></div>
-          <p>{ahead && self ? `${num((ahead.xp || 0) - (self.xp || 0) + 1)} more XP to beat ${getDisplayName(ahead)}’s score.` : myRank === 1 ? `You hold the flag with ${num(topScore)} XP.` : 'This register shows up to 100 profiles, ordered by XP.'}</p>
-          {self && <Link to={`/profile/${self.id}`}>Open my record <ArrowUpRight size={16}/></Link>}
-        </section>
-      </div>
-
-      <section className="summit-register" aria-labelledby="register-title">
-        <div className="summit-register-title"><div><p className="summit-kicker">The field register</p><h2 id="register-title">All standings</h2></div>
-          <button className="summit-refresh" disabled={refreshing} onClick={() => void loadLeaderboard(true)}><RefreshCw size={16} className={refreshing ? 'animate-spin' : ''}/>{refreshing ? 'Refreshing…' : 'Refresh'}</button></div>
-        <div className="summit-tools">
-          <label className="summit-search"><Search size={17}/><input type="search" value={search} onChange={e=>setSearch(e.target.value)} aria-label="Search learners" placeholder="Name or username"/></label>
+      <section className="podium-personal" aria-labelledby="personal-place"><div><h2 id="personal-place" className="ranks-kicker">Your standing</h2><strong>{myRank ? `#${myRank}` : 'Unranked'}</strong></div>
+        <div>{self && <b>Level {getLevel(self.xp)} · {num(self.xp)} XP</b>}
+          <p>{ahead && self ? `${num((ahead.xp || 0) - (self.xp || 0) + 1)} more XP to beat ${getDisplayName(ahead)}’s score.` : myRank === 1 ? 'You hold first place.' : 'The board lists up to 100 ranked profiles.'}</p></div>
+        {self && <Link to={`/profile/${self.id}`} aria-label="Open my record"><ArrowUpRight size={20}/></Link>}
+      </section>
+      <section className="ranks-register" aria-labelledby="register-title">
+        <div className="ranks-register-title"><div><p className="ranks-kicker">League directory</p><h2 id="register-title">All standings</h2></div>
+          <button className="ranks-refresh" disabled={refreshing} onClick={() => void loadLeaderboard(true)}><RefreshCw size={16} className={refreshing ? 'animate-spin' : ''}/>{refreshing ? 'Refreshing…' : 'Refresh'}</button></div>
+        <div className="ranks-tools">
+          <label className="ranks-search"><Search size={17}/><input type="search" value={search} onChange={e=>setSearch(e.target.value)} aria-label="Search learners" placeholder="Name or username"/></label>
           <select value={grade} onChange={e=>setGrade(e.target.value)} aria-label="Filter by grade"><option value="all">All grades</option>{grades.map(g=><option key={g} value={g}>Grade {g}</option>)}</select>
           <select value={sortMode} onChange={e=>setSortMode(e.target.value as SortMode)} aria-label="Sort standings"><option value="xp">Highest XP</option><option value="quizzes">Most quizzes</option><option value="name">Name A–Z</option></select>
         </div>
-        <div className="summit-count"><span role="status">Showing {visibleUsers.length} of {users.length}</span>{hasFilters && <button onClick={clearFilters}>Reset filters</button>}</div>
-        {visibleUsers.length ? <table className="summit-table"><thead><tr><th scope="col">Rank</th><th scope="col">Learner</th><th scope="col" className="summit-rounds">Quizzes</th><th scope="col">XP</th></tr></thead>
+        <div className="ranks-count"><span role="status">Showing {visibleUsers.length} of {users.length}</span>{hasFilters && <button onClick={clearFilters}>Reset filters</button>}</div>
+        {visibleUsers.length ? <table className="ranks-table"><thead><tr><th scope="col">Rank</th><th scope="col">Learner</th><th scope="col" className="ranks-rounds">Quizzes</th><th scope="col">XP</th></tr></thead>
           <tbody>{visibleUsers.map(u=><tr key={u.id} data-self={u.id === self?.id}><td>#{rankById.get(u.id)}</td>
-            <td><Link to={`/profile/${u.id}`}><Avatar user={u}/><span className="summit-identity"><strong>{getDisplayName(u)}{u.id === self?.id && <small> · You</small>}</strong><span>@{u.username || 'learner'}{u.grade ? ` · Grade ${u.grade}` : ''}</span></span></Link></td>
-            <td className="summit-rounds">{num(u.totalQuizzesPlayed)}</td><td>{num(u.xp)}</td></tr>)}</tbody></table> : <p className="summit-empty">{hasFilters ? 'No learners match these filters.' : 'No standings to display yet.'}</p>}
+            <td><Link to={`/profile/${u.id}`}><Avatar user={u}/><span className="ranks-identity"><strong>{getDisplayName(u)}{u.id === self?.id && <small> · You</small>}</strong><span>@{u.username || 'learner'}{u.grade ? ` · Grade ${u.grade}` : ''}</span></span></Link></td>
+            <td className="ranks-rounds">{num(u.totalQuizzesPlayed)}</td><td>{num(u.xp)}</td></tr>)}</tbody></table> : <p className="ranks-empty">{hasFilters ? 'No learners match these filters.' : 'No standings to display yet.'}</p>}
       </section>
     </>}
   </div>;
