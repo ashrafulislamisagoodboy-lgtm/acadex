@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowUpRight, Crown, Play, RefreshCw, Search, SkipForward } from 'lucide-react';
 import './podium.css';
 import { Link } from 'react-router-dom';
-import { auth, collection, db, getDocs, limit, orderBy, query } from '../../lib/local';
+import { auth, collection, db, getDocs, limit, orderBy, query, where } from '../../lib/local';
 
 type LeaderboardUser = {
   id: string;
@@ -94,7 +94,7 @@ function PodiumShow({ leaders, ranked, answers }: { leaders: LeaderboardUser[]; 
 }
 
 export default function Leaderboard() {
-  const [users, setUsers] = useState<LeaderboardUser[]>([]);
+  const [overallRanking, setUsers] = useState<LeaderboardUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -107,11 +107,10 @@ export default function Leaderboard() {
     setError('');
 
     try {
-      const usersQuery = query(collection(db, 'users'), orderBy('xp', 'desc'), limit(100));
+      const usersQuery = query(collection(db, 'users'), where('isBanned', '==', false), orderBy('xp', 'desc'), orderBy('name'), limit(100));
       const snapshot = await getDocs(usersQuery);
       const nextUsers = snapshot.docs
-        .map((document) => ({ id: document.id, ...document.data() }) as LeaderboardUser)
-        .filter((user) => !user.isBanned);
+        .map((document) => ({ id: document.id, ...document.data() }) as LeaderboardUser);
       setUsers(nextUsers);
     } catch (loadError) {
       console.error('Unable to load leaderboard:', loadError);
@@ -126,16 +125,6 @@ export default function Leaderboard() {
     void loadLeaderboard();
   }, [loadLeaderboard]);
 
-  const overallRanking = useMemo(
-    () =>
-      [...users].sort(
-        (a, b) =>
-          (b.xp || 0) - (a.xp || 0) ||
-          getDisplayName(a).localeCompare(getDisplayName(b)),
-      ),
-    [users],
-  );
-
   const rankById = useMemo(
     () => new Map(overallRanking.map((user, index) => [user.id, index + 1])),
     [overallRanking],
@@ -143,10 +132,10 @@ export default function Leaderboard() {
 
   const grades = useMemo(
     () =>
-      Array.from(new Set(users.map((user) => user.grade).filter(Boolean) as string[])).sort(
+      Array.from(new Set(overallRanking.map((user) => user.grade).filter(Boolean) as string[])).sort(
         (a, b) => a.localeCompare(b, undefined, { numeric: true }),
       ),
-    [users],
+    [overallRanking],
   );
 
   const visibleUsers = useMemo(() => {
@@ -172,7 +161,7 @@ export default function Leaderboard() {
   }, [grade, overallRanking, search, sortMode]);
 
   const topThree = overallRanking.slice(0, 3);
-  const totalQuestions = users.reduce((sum, user) => sum + (user.totalQuestionsAttended || 0), 0);
+  const totalQuestions = overallRanking.reduce((sum, user) => sum + (user.totalQuestionsAttended || 0), 0);
   const hasFilters = Boolean(search.trim()) || grade !== 'all' || sortMode !== 'xp';
   const currentUserId = auth.currentUser?.uid;
 
@@ -190,9 +179,9 @@ export default function Leaderboard() {
   if (loading) return <p className="ranks-status" role="status">Reading the league standings…</p>;
 
   return <div className="ranks-board">
-    <PodiumShow leaders={topThree} ranked={users.length} answers={totalQuestions} />
+    {(!error || overallRanking.length > 0) && <PodiumShow leaders={topThree} ranked={overallRanking.length} answers={totalQuestions} />}
     {error && <div className="ranks-status" role="alert">{error} <button disabled={refreshing} onClick={() => void loadLeaderboard(true)}>Retry</button></div>}
-    {(!error || users.length > 0) && <>
+    {(!error || overallRanking.length > 0) && <>
       <section className="podium-personal" aria-labelledby="personal-place"><div><h2 id="personal-place" className="ranks-kicker">Your standing</h2><strong>{myRank ? `#${myRank}` : 'Unranked'}</strong></div>
         <div>{self && <b>Level {getLevel(self.xp)} · {num(self.xp)} XP</b>}
           <p>{ahead && self ? `${num((ahead.xp || 0) - (self.xp || 0) + 1)} more XP to beat ${getDisplayName(ahead)}’s score.` : myRank === 1 ? 'You hold first place.' : 'The board lists up to 100 ranked profiles.'}</p></div>
@@ -206,7 +195,7 @@ export default function Leaderboard() {
           <select value={grade} onChange={e=>setGrade(e.target.value)} aria-label="Filter by grade"><option value="all">All grades</option>{grades.map(g=><option key={g} value={g}>Grade {g}</option>)}</select>
           <select value={sortMode} onChange={e=>setSortMode(e.target.value as SortMode)} aria-label="Sort standings"><option value="xp">Highest XP</option><option value="quizzes">Most quizzes</option><option value="name">Name A–Z</option></select>
         </div>
-        <div className="ranks-count"><span role="status">Showing {visibleUsers.length} of {users.length}</span>{hasFilters && <button onClick={clearFilters}>Reset filters</button>}</div>
+        <div className="ranks-count"><span role="status">Showing {visibleUsers.length} of {overallRanking.length}</span>{hasFilters && <button onClick={clearFilters}>Reset filters</button>}</div>
         {visibleUsers.length ? <table className="ranks-table"><thead><tr><th scope="col">Rank</th><th scope="col">Learner</th><th scope="col" className="ranks-rounds">Quizzes</th><th scope="col">XP</th></tr></thead>
           <tbody>{visibleUsers.map(u=><tr key={u.id} data-self={u.id === self?.id}><td>#{rankById.get(u.id)}</td>
             <td><Link to={`/profile/${u.id}`}><Avatar user={u}/><span className="ranks-identity"><strong>{getDisplayName(u)}{u.id === self?.id && <small> · You</small>}</strong><span>@{u.username || 'learner'}{u.grade ? ` · Grade ${u.grade}` : ''}</span></span></Link></td>

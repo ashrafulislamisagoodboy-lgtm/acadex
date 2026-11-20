@@ -1,3 +1,4 @@
+import { readFileUrl, newStudentRows } from '../../lib/imports';
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc, arrayUnion, query, where, setDoc, getDoc, writeBatch, getDocsFromServer } from '../../lib/local';
 import { db, auth } from '../../lib/local';
@@ -275,15 +276,7 @@ export default function AdminPanel() {
 
     setAiLoading(true);
     try {
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve) => {
-        reader.onload = () => {
-          const base64 = (reader.result as string).split(',')[1];
-          resolve(base64);
-        };
-      });
-      reader.readAsDataURL(idCardsFile);
-      const base64 = await base64Promise;
+      const base64 = (await readFileUrl(idCardsFile)).split(',')[1];
 
       const students = await extractStudentsFromIDCards({
         data: base64,
@@ -309,29 +302,13 @@ export default function AdminPanel() {
     setLoading(true);
     try {
       const batch = writeBatch(db);
-      let addedCount = 0;
-      
-      // We still need to check for duplicates, but we can do it more efficiently
-      // For now, let's just use the batch for the writes
-      for (const student of reviewStudents) {
-        const q = query(collection(db, 'admin_students'), where('studentId', '==', student.studentId));
-        const snapshot = await getDocs(q);
-        
-        if (snapshot.empty) {
-          const newDocRef = doc(db, 'admin_students', student.studentId);
-          batch.set(newDocRef, {
-            ...student,
-            createdAt: new Date().toISOString()
-          });
-          addedCount++;
-        }
+      const registry = await getDocs(collection(db, 'admin_students'));
+      const additions = newStudentRows(reviewStudents, registry.docs.map(row => row.id));
+      for (const student of additions) {
+        batch.set(doc(db, 'admin_students', student.studentId), { ...student, createdAt: new Date().toISOString() });
       }
-      
-      if (addedCount > 0) {
-        await batch.commit();
-      }
-      
-      showNotification(`Successfully added ${addedCount} new students!`);
+      if (additions.length) await batch.commit();
+      showNotification(`Added ${additions.length} students; skipped ${reviewStudents.length - additions.length} existing or repeated IDs.`);
       setReviewStudents(null);
       fetchData();
     } catch (err: any) {
@@ -347,15 +324,7 @@ export default function AdminPanel() {
 
     setAiLoading(true);
     try {
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve) => {
-        reader.onload = () => {
-          const base64 = (reader.result as string).split(',')[1];
-          resolve(base64);
-        };
-      });
-      reader.readAsDataURL(calendarFile);
-      const base64 = await base64Promise;
+      const base64 = (await readFileUrl(calendarFile)).split(',')[1];
 
       const extractedEvents = await extractEventsFromCalendar({
         data: base64,
@@ -476,18 +445,7 @@ export default function AdminPanel() {
 
     setAiLoading(true);
     try {
-      const reader = new FileReader();
-      
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => {
-          const base64 = (reader.result as string).split(',')[1];
-          resolve(base64);
-        };
-        reader.onerror = reject;
-      });
-      
-      reader.readAsDataURL(bookFile);
-      const data = await base64Promise;
+      const data = (await readFileUrl(bookFile)).split(',')[1];
       const mimeType = bookFile.type;
 
       const generatedQuestions = await generateQuizFromBook(bookTitle, { data, mimeType });

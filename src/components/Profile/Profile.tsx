@@ -1,3 +1,4 @@
+import { readFileUrl } from '../../lib/imports';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api, doc, updateDoc, collection, query, onSnapshot, orderBy, limit } from '../../lib/local';
@@ -160,14 +161,7 @@ function ProfileView({ uid }: { uid: string }) {
     setUploadStatus('Processing image...');
     
     try {
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
-      const base64String = await base64Promise;
+      const base64String = await readFileUrl(file);
       setUploadStatus('Saving to database...');
       const updatePayload = type === 'pfp' ? { photoUrl: base64String } : { bannerUrl: base64String };
       

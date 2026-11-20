@@ -114,7 +114,7 @@ export function onSnapshot(ref: Ref, callback: (value: any) => void, onError: (e
         previous = serialized;
         callback(ref.kind === 'document' ? snapshot(raw) : { docs: raw.docs.map(snapshot), empty: raw.docs.length === 0, size: raw.docs.length });
       }
-    } catch (error) { if (active) onError(error as Error); }
+    } catch (error) { previous = undefined; if (active) onError(error as Error); }
     finally { pending = false; }
   }
   refresh();

@@ -27,26 +27,34 @@ export default function QuizGame() {
   const [quizResults, setQuizResults] = useState<boolean[]>([]);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [quizId, setQuizId] = useState('');
+  const [libraryVersion, setLibraryVersion] = useState(0);
+  const [libraryError, setLibraryError] = useState(false);
+  const mounted = useRef(false);
   const answerLock = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     let active = true;
+    mounted.current = true;
+    setLoading(true); setLibraryError(false); setNotification(null);
     Promise.all([getDocs(collection(db, 'questions')), getDoc(doc(db, 'users', auth.currentUser!.uid))])
       .then(([snapshot, user]) => {
         if (!active) return;
         const data = user.data();
         const admin = data?.role === 'admin';
         setIsAdmin(admin); setUserTotalXp(data?.xp || 0); setTotalQuestionsAttended(data?.totalQuestionsAttended || 0);
-        const items = snapshot.docs.map((row: any) => ({ id: row.id, ...row.data() }));
+        const items = snapshot.docs.map((row: any) => {
+          const question = row.data();
+          return { ...question, id: row.id, subject: (question.subject || 'Uncategorized').trim(), chapter: (question.chapter || 'Default').trim() };
+        });
         setAllQuestions(items);
-        setSubjects(Array.from(new Set<string>(items.map((q: any) => (q.subject || 'Uncategorized').trim()))).filter(subject => admin || subject !== 'Uncategorized').sort());
-      }).catch(error => { if (active) setNotification({ message: error.message, type: 'error' }); })
+        setSubjects(Array.from(new Set<string>(items.map((q: any) => q.subject))).filter(subject => admin || subject !== 'Uncategorized').sort());
+      }).catch(error => { if (active) { setLibraryError(true); setNotification({ message: error.message, type: 'error' }); } })
       .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; clearTimeout(timer.current); };
-  }, []);
+    return () => { active = false; mounted.current = false; clearTimeout(timer.current); };
+  }, [libraryVersion]);
   useEffect(() => {
-    setChapters(selectedSubject ? Array.from(new Set<string>(allQuestions.filter(q => (q.subject || 'Uncategorized').trim() === selectedSubject).map(q => (q.chapter || 'Default').trim()))).sort() : []);
+    setChapters(selectedSubject ? Array.from(new Set<string>(allQuestions.filter(q => q.subject === selectedSubject).map(q => q.chapter))).sort() : []);
   }, [selectedSubject, allQuestions]);
 
   const startQuiz = async (chapterOverride?: string) => {
@@ -68,6 +76,7 @@ export default function QuizGame() {
     answerLock.current = true; setPending(true); setNotification(null);
     try {
       const result = await answerLocalQuiz(quizId, currentIndex, optionIndex);
+      if (!mounted.current) return;
       setQuestions(previous => previous.map((question, index) => index === currentIndex ? { ...question, correctIndex: result.correctIndex } : question));
       setSelectedOption(optionIndex); setQuizResults(previous => [...previous, result.correct]);
       setUserTotalXp(result.xp); setTotalQuestionsAttended(result.totalQuestionsAttended);
@@ -101,7 +110,7 @@ export default function QuizGame() {
           <p>{selectedSubject ? 'Select a chapter to start a round.' : 'Select a book, then a chapter.'}</p>
         </header>
 
-        {subjects.length === 0 ? (
+        {libraryError ? <button type="button" className="btn-primary" onClick={() => setLibraryVersion(n => n + 1)}>Retry library</button> : subjects.length === 0 ? (
           <div className="p-12 text-center space-y-6 card bg-butter border-2 border-dashed border-forest/10">
             <div className="w-24 h-24 bg-forest/5 rounded-full flex items-center justify-center mx-auto">
               <AlertCircle className="text-forest/20" size={48} />
@@ -132,7 +141,7 @@ export default function QuizGame() {
                     <div className="text-center space-y-1">
                       <h3 className="text-xl font-black text-forest group-hover:text-forest transition-all uppercase tracking-tight">{subject}</h3>
                       <p className="text-[11px] font-black text-forest/40 uppercase tracking-widest">
-                        {allQuestions.filter(q => (q.subject || 'Uncategorized') === subject).length} Questions Available
+                        {allQuestions.filter(q => q.subject === subject).length} Questions Available
                       </p>
                     </div>
                   </motion.button>
@@ -159,10 +168,7 @@ export default function QuizGame() {
                       transition={{ delay: idx * 0.05 }}
                       whileHover={{ x: 10 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => {
-                        setSelectedChapter(chapter);
-                        startQuiz(chapter);
-                      }}
+                      onClick={() => void startQuiz(chapter)}
                       className="card p-6 flex items-center justify-between hover:border-forest transition-all group bg-butter border-2 border-forest/10 shadow-lg shadow-black/10"
                     >
                       <div className="flex items-center gap-5">
@@ -172,7 +178,7 @@ export default function QuizGame() {
                         <div className="text-left">
                           <h3 className="text-lg font-black text-forest group-hover:text-forest transition-all tracking-tight">{chapter}</h3>
                           <p className="text-[11px] font-black text-forest/40 uppercase tracking-widest">
-                            {allQuestions.filter(q => (q.subject || 'Uncategorized') === selectedSubject && (q.chapter || 'Default') === chapter).length} Challenges
+                            {allQuestions.filter(q => q.subject === selectedSubject && q.chapter === chapter).length} Challenges
                           </p>
                         </div>
                       </div>
@@ -259,7 +265,10 @@ export default function QuizGame() {
               <ChevronRight size={20} />
             </button>
             <button 
-              onClick={() => window.location.reload()} 
+              onClick={() => {
+                setQuestions([]); setQuizId(''); setSelectedSubject(null); setSelectedChapter(null);
+                setGameOver(false); setLibraryVersion(n => n + 1);
+              }}
               className="text-butter/40 font-bold text-sm hover:text-butter transition-colors"
             >
               Back to Menu
