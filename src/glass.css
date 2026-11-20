@@ -130,12 +130,12 @@ body { background: #1c2a47; }
 /* Tab turn: the departing glyph is the front of the coin, the destination
    is its reverse. The lens lives outside the route, so a new tap can replace it. */
 .tab-turn { position:fixed; z-index:75; inset:0; display:grid; place-items:center; overflow:hidden; pointer-events:none; }
-.tab-turn::before {
-  content:''; position:absolute; inset:0; transform-origin:left center;
-  background:linear-gradient(105deg, transparent, color-mix(in srgb,var(--turn-tint) 28%,transparent) 34%, #d8f0ffb3 87%,#fff9);
-  border-inline-end:1px solid #fff9;
+.tab-turn__ripple {
+  position:absolute; left:calc(50% + var(--to-x)); top:calc(50% + var(--to-y));
+  width:32vmax; aspect-ratio:1; translate:-50% -50%; border-radius:50%; opacity:0;
+  background:radial-gradient(circle closest-side,transparent 82%,color-mix(in srgb,var(--turn-tint) 16%,transparent) 91%,#e6faff74 97%,transparent);
+  border:1px solid #effaff9c;
 }
-.tab-turn[data-direction='back']::before { transform-origin:right center; background:linear-gradient(255deg,transparent,color-mix(in srgb,var(--turn-tint) 28%,transparent) 34%,#d8f0ffb3 87%,#fff9); }
 .tab-turn + .app-main { overflow-x:clip; }
 .tab-turn__lens { display:flex; align-items:center; gap:.6rem; padding:.35rem 1.1rem .35rem .35rem; border:1px solid #fffc; border-radius:999px; color:var(--ink); background:var(--sheet); box-shadow:var(--float); backdrop-filter:var(--lens); -webkit-backdrop-filter:var(--lens); perspective:220px; }
 .tab-turn__coin { position:relative; display:block; width:36px; height:36px; transform-style:preserve-3d; }
@@ -144,32 +144,33 @@ body { background: #1c2a47; }
 .tab-turn__title { font:700 .95rem/1 var(--ui); letter-spacing:-.025em; }
 
 @media (prefers-reduced-motion:no-preference) {
-  .tab-turn::before { animation:glass-sweep 640ms cubic-bezier(.24,.68,.27,1) both; }
+  .tab-turn__ripple { animation:tab-refraction 720ms cubic-bezier(.18,.62,.35,1) both; }
   .tab-turn + .app-main .route-stage {
     --sheet-start:min(45vw, 24rem);
     animation:section-arrive 620ms cubic-bezier(.16,.84,.23,1) both;
   }
-  .tab-turn[data-direction='back'] + .app-main .route-stage { --sheet-start:max(-45vw, -24rem); }
-  .tab-turn__lens { animation:turn-lens 760ms both; }
-  .tab-turn__coin { animation:turn-coin 440ms 45ms cubic-bezier(.22,.7,.16,1) both; }
-  .tab-turn__title { animation:turn-caption 240ms 95ms ease-out both; }
+  .tab-turn[data-direction='back'] + .app-main .route-stage { --sheet-start:max(-45vw, -24rem); --page-angle:7deg; }
+  .tab-turn__lens { animation:turn-lens 810ms both; }
+  .tab-turn__coin { animation:turn-coin 380ms 140ms cubic-bezier(.22,.7,.16,1) both; }
+  .tab-turn__title { animation:turn-caption 200ms 185ms ease-out both; }
 }
 @keyframes turn-lens {
-  0% { opacity:0; transform:translateX(calc(-18px * var(--turn-direction))) scale(.87); }
-  22%, 75% { opacity:1; transform:none; }
-  100% { opacity:0; transform:translateX(calc(10px * var(--turn-direction))) scale(.96); }
+  0% { opacity:0; transform:translate(var(--from-x),var(--from-y)) scale(.27); animation-timing-function:cubic-bezier(.14,.77,.25,1); }
+  8% { opacity:1; }
+  34%, 57% { opacity:1; transform:translate(0,0) scale(1); animation-timing-function:cubic-bezier(.6,.02,.83,.38); }
+  92% { opacity:.88; }
+  100% { opacity:0; transform:translate(var(--to-x),var(--to-y)) scale(.24); }
 }
 @keyframes turn-coin { to { transform:rotateY(calc(180deg * var(--turn-direction))); } }
 @keyframes turn-caption { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
 @media (prefers-reduced-motion:reduce) { .tab-turn { display:none; } }
 
 @keyframes section-arrive {
-  from { opacity:.12; transform:translateX(var(--sheet-start)) scale(.94); }
+  from { opacity:.18; transform:perspective(95rem) translateX(var(--sheet-start)) rotateY(var(--page-angle, -7deg)) scale(.95); }
   to { opacity:1; transform:none; }
 }
-@keyframes glass-sweep {
-  0% { transform:scaleX(.04); opacity:0; }
-  34% { opacity:.84; }
-  70% { transform:scaleX(1); }
-  100% { transform:scaleX(1); opacity:0; }
+@keyframes tab-refraction {
+  0% { transform:scale(.05); opacity:0; }
+  18% { opacity:.85; }
+  100% { transform:scale(8); opacity:0; }
 }

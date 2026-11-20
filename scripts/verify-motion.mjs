@@ -52,6 +52,10 @@ app.whenReady().then(async () => {
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.tab-turn__coin')).animationName"), 'turn-coin');
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.route-stage')).animationName"), 'section-arrive');
     assert.ok(await evaluate("document.querySelector('.tab-turn').getBoundingClientRect().height >= innerHeight"), 'Transition spans the viewport');
+    assert.equal(await evaluate("getComputedStyle(document.querySelector('.tab-turn__ripple')).animationName"), 'tab-refraction');
+    assert.ok(await evaluate("parseFloat(document.querySelector('.tab-turn').style.getPropertyValue('--to-y')) > 0"), 'Arrival is anchored to the mobile dock');
+    await evaluate(`document.querySelector('.mobile-dock a[href="/"]').click()`);
+    await ready('.desk');
     win.webContents.debugger.attach('1.3');
     await win.webContents.debugger.sendCommand('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
     await wait(300);

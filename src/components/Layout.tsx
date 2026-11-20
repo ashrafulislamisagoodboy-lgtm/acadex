@@ -62,6 +62,7 @@ export default function Layout({ user }: LayoutProps) {
                 <Link
                   key={item.path}
                   to={item.path}
+                  data-tab-anchor={item.path}
                   aria-current={active ? 'page' : undefined}
                   className={cn('desktop-nav__item', active && 'is-active')}
                 >
@@ -74,7 +75,7 @@ export default function Layout({ user }: LayoutProps) {
 
           <div className="header-actions">
             <WallpaperControl />
-            <Link to={`/profile/${user?.uid}`} className="profile-chip" aria-label={`Open ${displayName}'s profile`}>
+            <Link to={`/profile/${user?.uid}`} data-tab-anchor="/profile" className="profile-chip" aria-label={`Open ${displayName}'s profile`}>
               <span className="profile-chip__avatar">
                 {userData?.photoUrl ? (
                   <img src={userData.photoUrl} alt="" referrerPolicy="no-referrer" />
@@ -112,6 +113,7 @@ export default function Layout({ user }: LayoutProps) {
             <Link
               key={item.path}
               to={item.path}
+              data-tab-anchor={item.path}
               aria-current={active ? 'page' : undefined}
               className={cn('mobile-dock__item', active && 'is-active')}
             >
