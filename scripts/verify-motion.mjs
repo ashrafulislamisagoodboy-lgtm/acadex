@@ -28,6 +28,18 @@ app.whenReady().then(async () => {
     await evaluate(`document.querySelector('[aria-label="Next atlas plate"]').click()`);
     await ready('.atlas-picture text');
     assert.equal(await evaluate("document.querySelector('.atlas-caption strong').textContent"), 'The Summer Triangle');
+    if (await evaluate("document.querySelector('.wallpaper-control').getAttribute('aria-label') === 'Resume background motion'")) {
+      await evaluate("document.querySelector('.wallpaper-control').click()");
+    }
+    const tidePosition = () => evaluate("getComputedStyle(document.querySelector('.tide-high')).transform");
+    const moving = await tidePosition(); await wait(1000);
+    assert.notEqual(await tidePosition(), moving, 'The live wallpaper moves');
+    await evaluate("document.querySelector('.wallpaper-control').click()"); await wait(80);
+    const paused = await tidePosition(); await wait(250);
+    assert.equal(await tidePosition(), paused, 'Pause holds the current frame');
+    await win.loadURL(base + '/'); await ready('.desk');
+    assert.equal(await evaluate("document.querySelector('.wallpaper-control').getAttribute('aria-label')"), 'Resume background motion');
+    await evaluate("document.querySelector('.wallpaper-control').click()");
     await mkdir('artifacts', { recursive: true });
     for (const [name, width, height] of [['desktop', 1440, 1000], ['tablet', 768, 1024], ['mobile', 390, 844]]) {
       win.setContentSize(width, height); await wait(400);
@@ -39,6 +51,7 @@ app.whenReady().then(async () => {
     await wait(300);
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.route-reveal')).animationName"), 'none');
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.star-trace')).animationName"), 'none');
+    assert.equal(await evaluate("getComputedStyle(document.querySelector('.tide-high')).animationName"), 'none');
     await evaluate("document.querySelector('.mobile-dock a[href=\"/quiz\"]').click()");
     await ready('[data-page="/quiz"]');
     console.log('PASS: responsive desk, page arrival, reduced motion, mobile navigation.');

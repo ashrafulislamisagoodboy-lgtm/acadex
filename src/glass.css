@@ -16,11 +16,30 @@
 body { background: #1c2a47; }
 .auth-page, .app-shell { isolation:isolate; position:relative; background:transparent; }
 .app-shell:has(.desk) { background:transparent; }
-.app-shell::before, .auth-page::before {
-  content:''; display:block; position:fixed; z-index:-1; inset:0; pointer-events:none; mask-image:none;
-  background:linear-gradient(#111c38dd,#12203de8), url('/tide.svg') center / cover;
+/* Keep a single tide running across route changes. Glass panels sample the
+   moving layers behind them; controls and reading surfaces stay still. */
+#root { isolation:isolate; }
+.live-wallpaper { position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden; background:#bfcee9; }
+.live-wallpaper svg { width:100%; height:100%; display:block; }
+.live-wallpaper::after { content:''; position:absolute; inset:0; background:linear-gradient(#111c38d9,#12203de8); }
+#root:has(.auth-page, .desk) .live-wallpaper::after { opacity:0; }
+.tide { transform-origin:720px 500px; }
+@media (prefers-reduced-motion:no-preference) {
+  .tide { animation:tide-flow ease-in-out infinite alternate; }
+  .tide-high { --drift-x:115px; --drift-y:78px; --tilt:6deg; animation-duration:12s; animation-delay:-3s; }
+  .tide-mid { --drift-x:-95px; --drift-y:-100px; --tilt:-4deg; animation-duration:17s; animation-delay:-11s; }
+  .tide-near { --drift-x:100px; --drift-y:66px; --tilt:3deg; animation-duration:14s; animation-delay:-6s; }
+  .live-wallpaper[data-paused='true'] .tide { animation-play-state:paused; }
 }
-.auth-page::before, .app-shell:has(.desk)::before { background: #bfcee9 url('/tide.svg') center / cover; }
+@keyframes tide-flow {
+  from { transform:translate(0,0) rotate(0); }
+  to { transform:translate(var(--drift-x),var(--drift-y)) rotate(var(--tilt)); }
+}
+.portal-tools, .wallpaper-control { display:flex; align-items:center; }
+.portal-tools { gap:.65rem; }
+.wallpaper-control { justify-content:center; flex-shrink:0; width:44px; height:44px; color:var(--ink); background:#ffffff55; border:1px solid #fff8; border-radius:50%; }
+.wallpaper-control:hover { background:#ffffffa8; }
+@media (prefers-reduced-motion:reduce) { .wallpaper-control { display:none; } }
 .app-header { padding:max(.65rem,env(safe-area-inset-top)) 1rem .35rem; border:0; background:transparent; }
 .app-header__inner, .mobile-dock, .portal-spread, .desk-cover, .desk-columns > section, .glass-card, .card, .glass-card-dark, .almanac-month, .question-sheet, .quiz-stamp {
   background:var(--sheet); border:1px solid #ffffffb3; border-radius:24px; box-shadow:var(--float);

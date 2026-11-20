@@ -13,6 +13,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import { api, login } from '../../lib/local';
 import { cn } from '../../lib/utils';
 
+import { WallpaperControl } from '../Common/LiveWallpaper';
 import FieldAtlas from '../Common/FieldAtlas';
 
 export default function Login() {
@@ -106,7 +107,7 @@ export default function Login() {
     <main className="auth-page">
       <header className="portal-masthead">
         <span className="portal-brand"><BookOpen size={24} aria-hidden="true" /> Acadex</span>
-        <span className="portal-label">School learning league</span>
+        <div className="portal-tools"><span className="portal-label">School learning league</span><WallpaperControl /></div>
       </header>
       <div className="portal-spread">
         <aside className="portal-cover" aria-label="Acadex field notes">

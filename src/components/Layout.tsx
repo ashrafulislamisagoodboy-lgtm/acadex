@@ -4,6 +4,8 @@ import { auth, db, signOut, doc, onSnapshot, type LocalUser } from '../lib/local
 import { useState, useEffect } from 'react';
 import { cn } from '../lib/utils';
 
+import { WallpaperControl } from './Common/LiveWallpaper';
+
 interface LayoutProps {
   user: LocalUser | null;
 }
@@ -75,6 +77,7 @@ export default function Layout({ user }: LayoutProps) {
           </nav>
 
           <div className="header-actions">
+            <WallpaperControl />
             <Link to={`/profile/${user?.uid}`} className="profile-chip" aria-label={`Open ${displayName}'s profile`}>
               <span className="profile-chip__avatar">
                 {userData?.photoUrl ? (
