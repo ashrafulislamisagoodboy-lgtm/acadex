@@ -202,3 +202,21 @@ test('embedded preview uses its public origin and partitioned HTTPS session cook
   assert.equal((await app.call('/auth/logout', {}, setup.cookie, { Origin: 'https://other.example.test' })).status, 403);
   assert.match((await app.call('/auth/logout', {}, setup.cookie, { Origin: origin })).headers.get('set-cookie'), /Partitioned/);
 });
+
+test('preview retains a signed-in tab when the browser drops all cookies', async t => {
+  const origin = 'https://preview.example.test';
+  const app = await serve(':memory:', origin); t.after(() => app.close());
+  const headers = { Origin: origin, 'X-Acadex-Embedded': '1' };
+  const status = await app.call('/status', undefined, undefined, headers);
+  const credentials = { username: 'principal', password: 'preview-password' };
+  const setup = await app.call('/auth/setup', { ...credentials, name: 'Admin' }, status.cookie, headers);
+  assert.ok(setup.cookie);
+  assert.equal(setup.data.previewSession, undefined);
+  const login = await app.call('/auth/login', credentials, undefined, headers);
+  assert.ok(login.data.previewSession);
+  const tab = { ...headers, 'X-Acadex-Preview-Session': login.data.previewSession };
+  assert.equal((await app.call('/auth/me', undefined, undefined, tab)).data.user.uid, setup.data.user.uid);
+  assert.equal((await app.call('/data/read', { path: 'users', kind: 'collection' }, undefined, tab)).status, 200);
+  await app.call('/auth/logout', {}, undefined, tab);
+  assert.equal((await app.call('/auth/me', undefined, undefined, tab)).data.user, null);
+});

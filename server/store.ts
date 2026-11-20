@@ -32,7 +32,9 @@ function validDate(value: unknown) {
 
 export class LocalStore {
   db: DatabaseSync;
-  constructor(filename: string) {
+  private sessionLifetime: number;
+  constructor(filename: string, sessionLifetime = 7 * 86400000) {
+    this.sessionLifetime = sessionLifetime;
     if (filename !== ':memory:') mkdirSync(dirname(filename), { recursive: true });
     this.db = new DatabaseSync(filename);
     this.db.exec(`
@@ -68,7 +70,7 @@ export class LocalStore {
   createSession(uid: string) {
     const token = randomBytes(32).toString('hex');
     this.db.prepare('DELETE FROM sessions WHERE expires < ?').run(Date.now());
-    this.db.prepare('INSERT INTO sessions VALUES (?, ?, ?)').run(hashToken(token), uid, Date.now() + 7 * 86400000);
+    this.db.prepare('INSERT INTO sessions VALUES (?, ?, ?)').run(hashToken(token), uid, Date.now() + this.sessionLifetime);
     return { token, user: this.userInfo(this.get(`users/${uid}`)!) };
   }
   currentUser(token: string | undefined): Data | null {

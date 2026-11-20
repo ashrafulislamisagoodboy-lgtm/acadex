@@ -5,10 +5,28 @@ const listeners = new Set<(user: LocalUser | null) => void>();
 const changes = new EventTarget();
 let initialized: Promise<void> | undefined;
 
+const embedded = window.self !== window.top;
+const previewKey = 'acadex.preview.session';
+let previewSession: string | null = null;
+if (embedded) {
+  try { previewSession = sessionStorage.getItem(previewKey); } catch { /* Storage may be blocked along with cookies. */ }
+}
+function rememberSession(token: string | null) {
+  previewSession = token;
+  try {
+    if (token) sessionStorage.setItem(previewKey, token);
+    else sessionStorage.removeItem(previewKey);
+  } catch { /* Keep the session in memory for this page. */ }
+}
+
 export async function api<T = any>(path: string, body?: unknown): Promise<T> {
   let response: Response;
+  const headers = new Headers({ Accept: 'application/json' });
+  if (body !== undefined) headers.set('Content-Type', 'application/json');
+  if (embedded) headers.set('X-Acadex-Embedded', '1');
+  if (previewSession) headers.set('X-Acadex-Preview-Session', previewSession);
   try {
-    response = await fetch(`/api${path}`, { method: body === undefined ? 'GET' : 'POST', credentials: 'include', headers: body === undefined ? { Accept: 'application/json' } : { Accept: 'application/json', 'Content-Type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });
+    response = await fetch(`/api${path}`, { method: body === undefined ? 'GET' : 'POST', credentials: 'include', headers, redirect: 'error', body: body === undefined ? undefined : JSON.stringify(body) });
   } catch { throw new Error('Cannot reach the Acadex server. Check that it is running, then reload this page.'); }
   const raw = await response.text();
   let result: any;
@@ -18,6 +36,7 @@ export async function api<T = any>(path: string, body?: unknown): Promise<T> {
     if (response.status === 401 && !path.startsWith('/auth/')) acceptUser(null);
     throw new Error(result.error || 'The request failed.');
   }
+  if (embedded && ['/auth/login', '/auth/setup', '/auth/password'].includes(path)) rememberSession(result.previewSession ?? null);
   return result;
 }
 function acceptUser(user: LocalUser | null) {
@@ -38,10 +57,12 @@ export function onAuthStateChanged(_auth: typeof auth, callback: (user: LocalUse
 }
 export async function login(input: unknown, setup = false) {
   const result = await api(setup ? '/auth/setup' : '/auth/login', input);
-  acceptUser(result.user); changes.dispatchEvent(new Event('change'));
+  const session = await api('/auth/me');
+  if (!session.user || session.user.uid !== result.user.uid) throw new Error('Signed in, but the browser did not retain the session. Refresh this preview and try again.');
+  acceptUser(session.user); changes.dispatchEvent(new Event('change'));
 }
 export async function signOut(_auth: typeof auth) {
-  await api('/auth/logout', {}); acceptUser(null); changes.dispatchEvent(new Event('change'));
+  await api('/auth/logout', {}); if (embedded) rememberSession(null); acceptUser(null); changes.dispatchEvent(new Event('change'));
 }
 export const db = { path: '' };
 function reference(kind: Ref['kind'], parent: { path: string }, segments: string[]): Ref {
