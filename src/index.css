@@ -792,7 +792,7 @@ body { background: #21362e; }
 .mobile-dock { border-radius: 8px; background: #263e32; border-color: #657464; box-shadow: 0 2px 9px #19281d33; backdrop-filter: none; }
 .mobile-dock__item { color: #d1dac7; }.mobile-dock__item.is-active { background: #3c5143; }
 .app-main { max-width: 1240px; margin: auto; }
-.app-main { animation: page-in 210ms ease-out; }
+.route-reveal { animation: page-in 210ms ease-out; }
 @keyframes page-in { from { opacity: .65; translate: 0 4px; } to { opacity: 1; translate: 0 0; } }
 .route-reveal :is(h1,h2), .chapter-heading h1 { font-family: Georgia, 'Times New Roman', serif; font-weight: 500; letter-spacing: -.045em; }
 .chapter-heading { border-bottom: 1px solid #83937f; padding: 1.25rem 0; }
@@ -838,7 +838,7 @@ body { background: #21362e; }
 @media (prefers-reduced-motion:reduce) {
   html { scroll-behavior:auto; }
   *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; scroll-behavior:auto !important; }
-  .app-main { animation:none; }
+  .route-reveal { animation:none; }
 }
 .practice-rule { display:flex; flex-wrap:wrap; justify-content:space-between; gap:.5rem 1rem; border-block:1px solid #84947d; padding:.7rem 0; font:600 .75rem/1.45 var(--mono); }
 .question-sheet { background:var(--stock); border-left:5px solid #ad6e4e; color:var(--ink); padding:clamp(1.5rem,5vw,3.5rem); animation:page-in 180ms ease-out; }

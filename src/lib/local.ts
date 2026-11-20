@@ -105,7 +105,7 @@ export function writeBatch(_db: typeof db) {
 export function onSnapshot(ref: Ref, callback: (value: any) => void, onError: (error: Error) => void = console.error) {
   let active = true, pending = false, previous: string | undefined;
   async function refresh() {
-    if (!active || pending || document.hidden) return;
+    if (!active || pending) return;
     pending = true;
     try {
       const raw = await api('/data/read', ref);
@@ -119,9 +119,8 @@ export function onSnapshot(ref: Ref, callback: (value: any) => void, onError: (e
   }
   refresh();
   const timer = window.setInterval(refresh, 3000);
-  document.addEventListener('visibilitychange', refresh);
   changes.addEventListener('change', refresh);
-  return () => { active = false; clearInterval(timer); document.removeEventListener('visibilitychange', refresh); changes.removeEventListener('change', refresh); };
+  return () => { active = false; clearInterval(timer); changes.removeEventListener('change', refresh); };
 }
 export async function startLocalQuiz(subject: string, chapter: string) { return api('/quizzes', { subject, chapter }); }
 export async function answerLocalQuiz(id: string, index: number, optionIndex: number) {

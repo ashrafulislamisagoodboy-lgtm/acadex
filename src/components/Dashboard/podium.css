@@ -5,7 +5,7 @@
 @media(max-width:740px) { .ranks-tools { grid-template-columns:repeat(2,minmax(0,1fr)); }.ranks-search { grid-column:1/-1; }.ranks-rounds { display:none; }.ranks-table { table-layout:fixed; }.ranks-table th:first-child { width:3.1rem; }.ranks-table th:last-child { width:4.4rem; }.ranks-table :is(td,th) { padding-inline:.3rem; }.ranks-table td:last-child { overflow-wrap:anywhere; }.ranks-avatar { width:28px;height:28px; }.ranks-table a { gap:.4rem; } }
 .route-reveal[data-page='/leaderboard'] { padding:0; background:none; border:0; box-shadow:none; }
 .ranks-board { max-width:1080px; margin:auto; display:grid; gap:1rem; color:var(--ink); font-variant-numeric:tabular-nums; }
-.ranks-register,.ranks-status,.podium-personal { border:1px solid #fff9; border-radius:22px; padding:clamp(1rem,3vw,2rem); background:var(--reading-pane); box-shadow:var(--float); }
+.ranks-register,.ranks-status,.podium-personal { border:1px solid #fff9; border-radius:22px; padding:clamp(1rem,3vw,2rem); background:var(--reading-pane); box-shadow:var(--float); backdrop-filter:var(--lens); -webkit-backdrop-filter:var(--lens); }
 .ranks-register h2 { font-size:clamp(1.6rem,4vw,2.3rem); }.ranks-refresh { display:inline-flex; align-items:center; gap:.5rem; }
 .ranks-kicker,.ranks-table th,.podium-ledger { font:650 .68rem/1.5 var(--mono); letter-spacing:.14em; text-transform:uppercase; }
 .ranks-table .ranks-identity > * { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -30,13 +30,13 @@
 
 /* A cut-glass medallion and a single moving spotlight, rather than confetti
    over the standings. The curtain call only plays when requested. */
-.podium-theatre { --beam-offset:-50%; --beam-colour:#ffe0a0; }
-.podium-theatre[data-spotlight='2'] { --beam-offset:-119%; --beam-colour:#c6e4ff; }
-.podium-theatre[data-spotlight='3'] { --beam-offset:19%; --beam-colour:#ffc0a7; }
+.podium-theatre { --beam-x:50%; --beam-colour:#ffe0a0; }
+.podium-theatre[data-spotlight='2'] { --beam-x:17%; --beam-colour:#c6e4ff; }
+.podium-theatre[data-spotlight='3'] { --beam-x:83%; --beam-colour:#ffc0a7; }
 .ceremony-button { display:inline-flex; align-items:center; justify-content:center; gap:.45rem; min-height:44px; padding:.5rem 1rem; border:1px solid #fff7; border-radius:99px; background:#ffffff18; box-shadow:inset 0 1px 0 #fff4; color:#fff; font-weight:700; }
 .ceremony-button:hover,.spotlight-picker button:hover { background:#ffffff32; }
 .podium-stage { isolation:isolate; padding-top:5rem; }
-.podium-stage::after { content:''; pointer-events:none; position:absolute; z-index:-1; top:-1rem; bottom:1rem; width:48%; left:50%; transform:translateX(var(--beam-offset)); clip-path:polygon(44% 0,56% 0,100% 100%,0% 100%); background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--beam-colour) 19%, transparent) 76%,transparent); }
+.podium-stage::after { content:''; pointer-events:none; position:absolute; z-index:-1; top:-1rem; bottom:1rem; width:48%; left:var(--beam-x); transform:translateX(-50%); clip-path:polygon(44% 0,56% 0,100% 100%,0% 100%); background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--beam-colour) 19%, transparent) 76%,transparent); }
 .medal-portrait { position:absolute; width:clamp(42px,6vw,76px); aspect-ratio:1; display:grid; place-items:center; top:-14px; left:50%; transform:translate(-50%,-65%); border-radius:50%; background:conic-gradient(from 40deg,#fafaff,var(--light) 12%,#475167 26%,var(--light) 41%,#fff9 55%,#637089 70%,var(--light) 87%,#fff); box-shadow:0 3px 12px #10182e7a; }
 .medal-portrait::after { content:''; position:absolute; inset:5%; border:1px dashed #17223470; border-radius:50%; }
 .medal-portrait .ranks-avatar { width:75%; height:75%; background:#25304c; font:650 clamp(.83rem,1.8vw,1.4rem) Georgia,serif; color:var(--light); border:1px solid #fff9; }
@@ -47,7 +47,7 @@
 .podium-theatre :is(.ceremony-button,.spotlight-picker button):focus-visible { outline:2px solid white; }
 @media(max-width:500px) { .podium-heading { flex-wrap:wrap; }.podium-stage { padding-top:3.5rem; }.ceremony-button { padding:.4rem .65rem; font-size:.8rem; }.spotlight-strip { padding:.65rem; } }
 @media(prefers-reduced-motion:no-preference) {
-  .podium-stage::after { transition:transform .32s cubic-bezier(.23,.72,.25,1); }
+  .podium-stage::after { transition:left .48s cubic-bezier(.23,.72,.25,1); }
   .podium-step[data-lit='true'] .medal-portrait { animation:medal-strike .55s ease-out; }
   .podium-theatre[data-playing='true'] .podium-step[data-lit='true'] .podium-crystal::after { animation:edge-catch .85s ease-out; }
   .spotlight-copy > div { animation:crystal-rise .23s ease-out; }

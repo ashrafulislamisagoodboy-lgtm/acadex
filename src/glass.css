@@ -25,9 +25,6 @@
 @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
   :root { --sheet: #f6f8ff; --chrome: #f4f7ff; --smoke: #223351; --clear-pane: #f6f8ff; --reading-pane: #f6f8ff; --pane-frame: #26384a; --control-pane: #fff; --pane-glint:none; --lens: none; }
 }
-/* Only fixed navigation needs a live lens. Scrolling panes retain their
-   translucent fill and rim without repeatedly filtering the moving meadow. */
-@media (max-width: 800px), (pointer: coarse) { :root { --lens: none; } }
 body { background: #1c2a47; }
 .auth-page, .app-shell { isolation:isolate; position:relative; background:transparent; }
 .app-shell:has(.desk) { background:transparent; }
@@ -54,9 +51,9 @@ body { background: #1c2a47; }
 .app-header { padding:max(.65rem,env(safe-area-inset-top)) 1rem .35rem; border:0; background:transparent; }
 .app-header__inner, .mobile-dock, .portal-spread, .desk-cover, .desk-columns > section, .glass-card, .card, .glass-card-dark, .almanac-month, .question-sheet, .quiz-stamp {
   background:var(--sheet); border:1px solid #ffffffb3; border-radius:24px; box-shadow:var(--float);
-  -webkit-backdrop-filter:none; backdrop-filter:none;
+  -webkit-backdrop-filter:var(--lens); backdrop-filter:var(--lens);
 }
-.app-header__inner, .mobile-dock { -webkit-backdrop-filter:var(--lens); backdrop-filter:var(--lens); background:var(--chrome); border-radius:999px; }
+.app-header__inner, .mobile-dock { background:var(--chrome); border-radius:999px; }
 .app-header__inner { padding:.35rem .85rem; gap:.5rem; }
 .brand-lockup strong,.portal-brand { font:750 1.4rem/1 var(--ui); letter-spacing:-.055em; }
 .brand-lockup small, .profile-chip__copy small { color:#4d5a70; }
@@ -135,27 +132,27 @@ body { background: #1c2a47; }
 .tab-turn { position:fixed; z-index:75; inset:0; display:grid; place-items:center; overflow:hidden; pointer-events:none; }
 .tab-turn__ripple {
   position:absolute; left:calc(50% + var(--to-x)); top:calc(50% + var(--to-y));
-  width:80px; aspect-ratio:1; translate:-50% -50%; border-radius:50%; opacity:0;
+  width:32vmax; aspect-ratio:1; translate:-50% -50%; border-radius:50%; opacity:0;
   background:radial-gradient(circle closest-side,transparent 82%,color-mix(in srgb,var(--turn-tint) 16%,transparent) 91%,#e6faff74 97%,transparent);
   border:1px solid #effaff9c;
 }
 .tab-turn + .app-main { overflow-x:clip; }
-.tab-turn__lens { display:flex; align-items:center; gap:.6rem; padding:.35rem 1.1rem .35rem .35rem; border:1px solid #fffc; border-radius:999px; color:var(--ink); background:var(--sheet); box-shadow:var(--float); perspective:220px; }
+.tab-turn__lens { display:flex; align-items:center; gap:.6rem; padding:.35rem 1.1rem .35rem .35rem; border:1px solid #fffc; border-radius:999px; color:var(--ink); background:var(--sheet); box-shadow:var(--float); backdrop-filter:var(--lens); -webkit-backdrop-filter:var(--lens); perspective:220px; }
 .tab-turn__coin { position:relative; display:block; width:36px; height:36px; transform-style:preserve-3d; }
 .tab-turn__face { position:absolute; inset:0; display:grid; place-items:center; border-radius:50%; border:1px solid #ffffffc9; background:linear-gradient(145deg,#fff,#d7dfed); backface-visibility:hidden; -webkit-backface-visibility:hidden; }
 .tab-turn__back { transform:rotateY(180deg); background:var(--turn-tint); color:white; box-shadow:inset 0 1px 3px #fff8; }
 .tab-turn__title { font:700 .95rem/1 var(--ui); letter-spacing:-.025em; }
 
 @media (prefers-reduced-motion:no-preference) {
-  .tab-turn__ripple { animation:tab-refraction 340ms cubic-bezier(.18,.62,.35,1) both; }
+  .tab-turn__ripple { animation:tab-refraction 720ms cubic-bezier(.18,.62,.35,1) both; }
   .tab-turn + .app-main .route-stage {
-    --sheet-start:12px;
-    animation:section-arrive 180ms ease-out;
+    --sheet-start:min(45vw, 24rem);
+    animation:section-arrive 620ms cubic-bezier(.16,.84,.23,1) both;
   }
-  .tab-turn[data-direction='back'] + .app-main .route-stage { --sheet-start:-12px; }
-  .tab-turn__lens { animation:turn-lens 390ms both; }
-  .tab-turn__coin { animation:turn-coin 185ms 60ms cubic-bezier(.22,.7,.16,1) both; }
-  .tab-turn__title { animation:turn-caption 90ms 70ms ease-out both; }
+  .tab-turn[data-direction='back'] + .app-main .route-stage { --sheet-start:max(-45vw, -24rem); --page-angle:7deg; }
+  .tab-turn__lens { animation:turn-lens 810ms both; }
+  .tab-turn__coin { animation:turn-coin 380ms 140ms cubic-bezier(.22,.7,.16,1) both; }
+  .tab-turn__title { animation:turn-caption 200ms 185ms ease-out both; }
 }
 @keyframes turn-lens {
   0% { opacity:0; transform:translate(var(--from-x),var(--from-y)) scale(.27); animation-timing-function:cubic-bezier(.14,.77,.25,1); }
@@ -169,11 +166,11 @@ body { background: #1c2a47; }
 @media (prefers-reduced-motion:reduce) { .tab-turn { display:none; } }
 
 @keyframes section-arrive {
-  from { opacity:.9; transform:translateX(var(--sheet-start)); }
+  from { opacity:.18; transform:perspective(95rem) translateX(var(--sheet-start)) rotateY(var(--page-angle, -7deg)) scale(.95); }
   to { opacity:1; transform:none; }
 }
 @keyframes tab-refraction {
   0% { transform:scale(.05); opacity:0; }
   18% { opacity:.85; }
-  100% { transform:scale(1.8); opacity:0; }
+  100% { transform:scale(8); opacity:0; }
 }

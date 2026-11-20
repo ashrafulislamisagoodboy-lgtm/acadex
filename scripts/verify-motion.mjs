@@ -23,7 +23,7 @@ app.whenReady().then(async () => {
     assert.ok(login.username && login.password, 'Set preview credentials');
     await evaluate(`fetch('/api/auth/login', {method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify(${JSON.stringify(login)})}).then(r => { if (!r.ok) throw new Error('Preview login failed'); })`);
     await win.loadURL(base + '/'); await ready('.desk');
-    assert.equal(await evaluate("getComputedStyle(document.querySelector('.app-main')).animationName"), 'page-in');
+    assert.equal(await evaluate("getComputedStyle(document.querySelector('.route-reveal')).animationName"), 'page-in');
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.star-trace')).animationName"), 'trace-ink');
     await evaluate(`document.querySelector('[aria-label="Next atlas plate"]').click()`);
     await ready('.atlas-picture text');
@@ -48,7 +48,6 @@ app.whenReady().then(async () => {
     }
     await evaluate(`document.querySelector('.mobile-dock a[href="/leaderboard"]').click()`);
     await ready('.tab-turn__coin');
-    assert.equal(await evaluate("getComputedStyle(document.querySelector('.mobile-dock')).backdropFilter"), 'none', 'Mobile navigation needs no live blur');
     assert.equal(await evaluate("document.querySelector('.tab-turn__title').textContent"), 'Ranks');
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.tab-turn__coin')).animationName"), 'turn-coin');
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.route-stage')).animationName"), 'section-arrive');
@@ -60,7 +59,7 @@ app.whenReady().then(async () => {
     win.webContents.debugger.attach('1.3');
     await win.webContents.debugger.sendCommand('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
     await wait(300);
-    assert.equal(await evaluate("getComputedStyle(document.querySelector('.app-main')).animationName"), 'none');
+    assert.equal(await evaluate("getComputedStyle(document.querySelector('.route-reveal')).animationName"), 'none');
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.star-trace')).animationName"), 'none');
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.meadow-scene')).animationName"), 'none');
     await evaluate("document.querySelector('.mobile-dock a[href=\"/quiz\"]').click()");
