@@ -1,17 +1,25 @@
-/* Frosted materials: solid defaults for unsupported browsers and reduced transparency. */
+/* Clear materials: solid defaults for unsupported browsers and reduced transparency. */
 :root {
   --stock: #f7f9ff; --ink: #15223e; --rule: #253d6530;
   --color-forest: #172943; --color-butter: #f1f6ff;
   --sheet: #eff4fc; --chrome: #eef4fc; --smoke: #263552;
+  --clear-pane: #eff4fc; --reading-pane: #f6f8ff;
   --lens: none; --lip: inset 0 1px 0 #ffffffb8, inset 0 -1px 0 #ffffff35;
   --float: var(--lip), 0 12px 34px -16px #24366566;
   --ui: -apple-system, BlinkMacSystemFont, 'Figtree Variable', 'Segoe UI', sans-serif;
 }
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  :root { --sheet: rgb(249 252 255 / .73); --chrome: rgb(246 250 255 / .68); --smoke: rgb(37 52 80 / .83); --lens: blur(20px) saturate(145%); }
+  :root {
+    --sheet: rgb(249 252 255 / .48);
+    --chrome: rgb(246 250 255 / .36);
+    --clear-pane: linear-gradient(120deg, #ffffff55, #ffffff17 50%, #ffffff30);
+    --reading-pane: rgb(249 252 255 / .78);
+    --smoke: rgb(31 47 60 / .55);
+    --lens: blur(3px) saturate(112%);
+  }
 }
 @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-  :root { --sheet: #f6f8ff; --chrome: #f4f7ff; --smoke: #223351; --lens: none; }
+  :root { --sheet: #f6f8ff; --chrome: #f4f7ff; --smoke: #223351; --clear-pane: #f6f8ff; --reading-pane: #f6f8ff; --lens: none; }
 }
 body { background: #1c2a47; }
 .auth-page, .app-shell { isolation:isolate; position:relative; background:transparent; }
@@ -71,6 +79,23 @@ body { background: #1c2a47; }
 .question-sheet { color:var(--ink); }.quiz-stamp { border-radius:18px; }.chapter-heading p,.chapter-heading .folio-kicker { color:#d6e1f4; }
 .app-header :focus-visible,.auth-page :focus-visible,.desk :focus-visible { outline-color:#124ca6; }
 @media (max-width:700px) { .app-header { padding-inline:.5rem; }.portal-cover { border-bottom:1px solid #fff8; }.desk-columns { gap:1rem; }.desk-cover,.portal-spread { border-radius:21px; } }
+
+/* Keep the hills visible through the broad panes. Add contrast locally
+   behind type and inputs rather than frosting the whole scene. */
+.desk-cover, .portal-spread { background:var(--clear-pane); border-color:#ffffffa8; }
+.portal-cover { background:transparent; }
+.auth-card { background:var(--reading-pane); border-radius:20px; margin:.65rem; }
+.desk h1 em, .desk-intro .folio-kicker { color:#183849; }
+.desk-intro { color:#0c1d2b; text-shadow:0 1px 3px #ffffff80; }
+.desk-cta { text-shadow:none; }
+.field-atlas, .card, .glass-card, .question-sheet, .almanac-month, .tab-turn__lens { --sheet:var(--reading-pane); }
+.desk-columns > section { background:var(--smoke); color:white; --rule:#ffffff60; }
+.desk-columns .desk-title, .desk-columns .desk-row { border-color:var(--rule); }
+.desk-columns :is(.desk-title > span, .desk-row p, .folio-number) { color:#f4f9ff; }
+.desk-columns .desk-row:hover { background:#ffffff19; }
+.desk-columns :focus-visible { outline-color:white; }
+.app-shell:not(:has(.desk)) .app-header__inner, .mobile-dock { background:var(--reading-pane); }
+.portal-cover-title { text-shadow:0 1px 3px #ffffff80; }
 
 /* Tab turn: the departing glyph is the front of the coin, the destination
    is its reverse. The lens lives outside the route, so a new tap can replace it. */
