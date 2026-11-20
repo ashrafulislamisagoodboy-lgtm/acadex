@@ -27,3 +27,30 @@
 @media(max-width:500px) { .podium-stage { padding-top:2rem; }.podium-step { --height:8rem; }.podium-step[data-place='1'] { --height:10rem; }.podium-step[data-place='3'] { --height:6.5rem; }.podium-heading > span { font-size:.7rem; }.podium-ledger { font-size:.55rem; }.podium-personal { flex-wrap:wrap; }.podium-personal > div:nth-child(2) { flex:1; }.podium-crystal small { font-size:.65rem; } }
 @media(prefers-reduced-motion:no-preference) { .podium-step { animation:crystal-rise .48s cubic-bezier(.2,.8,.2,1) backwards; }.podium-step[data-place='2'] { animation-delay:.07s; }.podium-step[data-place='1'] { animation-delay:.13s; }.podium-personal { animation:crystal-rise .35s .24s ease-out backwards; } @keyframes crystal-rise { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:none; } } }
 @media(prefers-reduced-transparency:reduce), (prefers-contrast:more) { .podium-theatre { background:#182238; }.podium-crystal { background:#364461; }.podium-step[data-empty='true'] { opacity:1; } }
+
+/* A cut-glass medallion and a single moving spotlight, rather than confetti
+   over the standings. The curtain call only plays when requested. */
+.podium-theatre { --beam-x:50%; --beam-colour:#ffe0a0; }
+.podium-theatre[data-spotlight='2'] { --beam-x:17%; --beam-colour:#c6e4ff; }
+.podium-theatre[data-spotlight='3'] { --beam-x:83%; --beam-colour:#ffc0a7; }
+.ceremony-button { display:inline-flex; align-items:center; justify-content:center; gap:.45rem; min-height:44px; padding:.5rem 1rem; border:1px solid #fff7; border-radius:99px; background:#ffffff18; box-shadow:inset 0 1px 0 #fff4; color:#fff; font-weight:700; }
+.ceremony-button:hover,.spotlight-picker button:hover { background:#ffffff32; }
+.podium-stage { isolation:isolate; padding-top:5rem; }
+.podium-stage::after { content:''; pointer-events:none; position:absolute; z-index:-1; top:-1rem; bottom:1rem; width:48%; left:var(--beam-x); transform:translateX(-50%); clip-path:polygon(44% 0,56% 0,100% 100%,0% 100%); background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--beam-colour) 19%, transparent) 76%,transparent); }
+.medal-portrait { position:absolute; width:clamp(42px,6vw,76px); aspect-ratio:1; display:grid; place-items:center; top:-14px; left:50%; transform:translate(-50%,-65%); border-radius:50%; background:conic-gradient(from 40deg,#fafaff,var(--light) 12%,#475167 26%,var(--light) 41%,#fff9 55%,#637089 70%,var(--light) 87%,#fff); box-shadow:0 3px 12px #10182e7a; }
+.medal-portrait::after { content:''; position:absolute; inset:5%; border:1px dashed #17223470; border-radius:50%; }
+.medal-portrait .ranks-avatar { width:75%; height:75%; background:#25304c; font:650 clamp(.83rem,1.8vw,1.4rem) Georgia,serif; color:var(--light); border:1px solid #fff9; }
+.podium-step[data-lit='true'] .podium-crystal { border-color:var(--light); box-shadow:inset 0 0 20px #fff2,inset 0 -3px var(--light),0 0 24px color-mix(in srgb,var(--light) 22%,transparent); }
+.spotlight-strip { position:relative; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.85rem; padding:.9rem 1.1rem; margin-bottom:1rem; border:1px solid #fff4; border-inline-start:3px solid var(--beam-colour); border-radius:14px; background:#17223dc9; }
+.spotlight-copy { min-width:0; flex:1 1 12rem; }.spotlight-copy strong,.spotlight-copy small { display:block; }.spotlight-copy strong { font-size:clamp(1.2rem,2vw,1.6rem); overflow-wrap:anywhere; }.spotlight-copy small { font:650 .65rem/1.5 var(--mono); letter-spacing:.13em; text-transform:uppercase; color:var(--beam-colour); }.spotlight-copy p { font-size:.8rem; color:#dce2f4; }
+.spotlight-picker { display:flex; gap:.25rem; }.spotlight-picker button { width:44px; height:44px; border-radius:50%; border:1px solid #fff6; font:500 1.15rem Georgia,serif; }.spotlight-picker button[aria-pressed='true'] { color:#172139; background:var(--beam-colour); border-color:transparent; }
+.podium-theatre :is(.ceremony-button,.spotlight-picker button):focus-visible { outline:2px solid white; }
+@media(max-width:500px) { .podium-heading { flex-wrap:wrap; }.podium-stage { padding-top:3.5rem; }.ceremony-button { padding:.4rem .65rem; font-size:.8rem; }.spotlight-strip { padding:.65rem; } }
+@media(prefers-reduced-motion:no-preference) {
+  .podium-stage::after { transition:left .48s cubic-bezier(.23,.72,.25,1); }
+  .podium-step[data-lit='true'] .medal-portrait { animation:medal-strike .55s ease-out; }
+  .podium-theatre[data-playing='true'] .podium-step[data-lit='true'] .podium-crystal::after { animation:edge-catch .85s ease-out; }
+  .spotlight-copy > div { animation:crystal-rise .23s ease-out; }
+  @keyframes medal-strike { from { transform:translate(-50%,-85%) rotateY(-55deg); } to { transform:translate(-50%,-65%) rotateY(0); } }
+  @keyframes edge-catch { 35% { box-shadow:inset 0 0 24px #fff4; border-color:var(--light); } }
+}

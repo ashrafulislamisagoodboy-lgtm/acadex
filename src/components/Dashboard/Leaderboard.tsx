@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowUpRight, Crown, RefreshCw, Search } from 'lucide-react';
+import { ArrowUpRight, Crown, Play, RefreshCw, Search, SkipForward } from 'lucide-react';
 import './podium.css';
 import { Link } from 'react-router-dom';
 import { auth, collection, db, getDocs, limit, orderBy, query } from '../../lib/local';
@@ -38,6 +38,60 @@ const getLevel = (xp = 0) => Math.floor(xp / 100) + 1;
 const Avatar = ({ user }: { user: LeaderboardUser }) => <span className="ranks-avatar" aria-hidden="true">
   {user.photoUrl ? <img alt="" src={user.photoUrl} /> : getInitials(user)}
 </span>;
+
+const medals = ['Gold', 'Silver', 'Bronze'];
+
+function PodiumShow({ leaders, ranked, answers }: { leaders: LeaderboardUser[]; ranked: number; answers: number }) {
+  const [selected, setSelected] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const place = Math.min(selected, Math.max(leaders.length - 1, 0));
+  const player = leaders[place];
+
+  useEffect(() => {
+    if (!playing) return;
+    const timer = window.setTimeout(() => {
+      if (place > 0) setSelected(place - 1);
+      else setPlaying(false);
+    }, 1250);
+    return () => window.clearTimeout(timer);
+  }, [playing, place]);
+
+  function focusPlace(index: number) { setPlaying(false); setSelected(index); }
+  function ceremony() {
+    if (playing) { focusPlace(0); return; }
+    setSelected(leaders.length - 1);
+    setPlaying(true);
+  }
+
+  return <section className="podium-theatre" aria-labelledby="podium-title" data-spotlight={place + 1} data-playing={playing}>
+    <header className="podium-heading"><div><p className="ranks-kicker">Acadex honours · All-time XP</p><h1 id="podium-title">The Podium</h1></div>
+      {player && <button type="button" className="ceremony-button" onClick={ceremony}>
+        {playing ? <SkipForward size={16}/> : <Play size={15}/>}{playing ? 'Skip reveal' : 'Play ceremony'}
+      </button>}
+    </header>
+    <ol className="podium-stage" aria-label="Top three by experience points">
+      {[0, 1, 2].map(i => {
+        const user = leaders[i];
+        const face = <><span className="podium-rim" aria-hidden="true"/>
+          {user && <span className="medal-portrait" aria-hidden="true"><Avatar user={user}/></span>}
+          <span className="podium-place" aria-hidden="true">{i === 0 && <Crown size={18}/>} {['I','II','III'][i]}</span>
+          <strong className="podium-etch">{user ? getDisplayName(user) : 'Unclaimed'}</strong><small>{user ? `${numberFormatter.format(user.xp || 0)} XP` : 'Open place'}</small></>;
+        return <li key={i} className="podium-step" data-place={i+1} data-empty={!user} data-lit={!!user && i === place}>
+          {user ? <Link className="podium-crystal" to={`/profile/${user.id}`} aria-label={`Rank ${i+1}: ${getDisplayName(user)}, ${user.xp || 0} XP. View profile.`}>{face}</Link>
+            : <div className="podium-crystal" aria-label={`Place ${i+1} unclaimed`}>{face}</div>}
+        </li>;
+      })}
+    </ol>
+    {player && <div className="spotlight-strip">
+      <div className="spotlight-copy" aria-live="polite" aria-atomic="true"><div key={player.id}>
+        <small>{medals[place]} spotlight</small><strong>{getDisplayName(player)}</strong>
+        <p>Level {getLevel(player.xp)} · {numberFormatter.format(player.totalQuizzesPlayed || 0)} quizzes · {numberFormatter.format(player.totalQuestionsAttended || 0)} questions answered</p>
+      </div></div>
+      <div className="spotlight-picker" role="group" aria-label="Spotlight a medallist">{leaders.map((u,i) => <button type="button" key={u.id} aria-pressed={place===i} aria-label={`Spotlight ${medals[i]}: ${getDisplayName(u)}`} onClick={()=>focusPlace(i)}>{['I','II','III'][i]}</button>)}</div>
+    </div>}
+    <div className="podium-ledger"><span>{numberFormatter.format(ranked)} ranked</span><span>{numberFormatter.format(answers)} answers logged</span></div>
+  </section>;
+}
 
 export default function Leaderboard() {
   const [users, setUsers] = useState<LeaderboardUser[]>([]);
@@ -136,22 +190,7 @@ export default function Leaderboard() {
   if (loading) return <p className="ranks-status" role="status">Reading the league standings…</p>;
 
   return <div className="ranks-board">
-    <section className="podium-theatre" aria-labelledby="podium-title">
-      <header className="podium-heading"><div><p className="ranks-kicker">Acadex honours</p><h1 id="podium-title">The Podium</h1></div><span>All-time XP</span></header>
-      <ol className="podium-stage" aria-label="Top three by experience points">
-        {[0, 1, 2].map(i => {
-          const user = topThree[i];
-          const face = <><span className="podium-rim" aria-hidden="true"/><span className="podium-place" aria-hidden="true">{i === 0 ? <Crown size={18}/> : null}{['I','II','III'][i]}</span>
-            <strong className="podium-etch">{user ? getDisplayName(user) : 'Unclaimed'}</strong>
-            <small>{user ? `${num(user.xp)} XP` : 'Open place'}</small></>;
-          return <li key={i} className="podium-step" data-place={i+1} data-empty={!user}>
-            {user ? <Link className="podium-crystal" to={`/profile/${user.id}`} aria-label={`Rank ${i+1}: ${getDisplayName(user)}, ${num(user.xp)} XP. View profile.`}>{face}</Link>
-              : <div className="podium-crystal" aria-label={`Place ${i+1} unclaimed`}>{face}</div>}
-          </li>;
-        })}
-      </ol>
-      <div className="podium-ledger"><span>{num(users.length)} ranked</span><span>{num(totalQuestions)} answers logged</span></div>
-    </section>
+    <PodiumShow leaders={topThree} ranked={users.length} answers={totalQuestions} />
     {error && <div className="ranks-status" role="alert">{error} <button disabled={refreshing} onClick={() => void loadLeaderboard(true)}>Retry</button></div>}
     {(!error || users.length > 0) && <>
       <section className="podium-personal" aria-labelledby="personal-place"><div><h2 id="personal-place" className="ranks-kicker">Your standing</h2><strong>{myRank ? `#${myRank}` : 'Unranked'}</strong></div>
