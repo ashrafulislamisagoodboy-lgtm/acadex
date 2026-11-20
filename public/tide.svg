@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 1000" preserveAspectRatio="xMidYMid slice" fill="none">
+ <defs>
+  <linearGradient id="base" x2="1" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#b7ecf1"/><stop offset=".47" stop-color="#aab6fa"/><stop offset="1" stop-color="#f1d2ea"/></linearGradient>
+  <linearGradient id="wave" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#6fa8d8"/><stop offset=".42" stop-color="#b9f9ea"/><stop offset=".74" stop-color="#84bbe8"/><stop offset="1" stop-color="#7885df"/></linearGradient>
+  <linearGradient id="veil" x2="1" y2=".4"><stop stop-color="#bd9ff2"/><stop offset=".5" stop-color="#edf2ff"/><stop offset="1" stop-color="#8e9fe5"/></linearGradient>
+ </defs>
+ <path fill="url(#base)" d="M0 0h1440v1000H0z"/>
+ <path fill="url(#wave)" d="M-180-80C110 48 330 320 670 253S1160-40 1530 88v250c-342-173-570 209-920 199S-34 145-180 260z"/>
+ <path fill="url(#veil)" d="M-90 790c273 44 432-322 764-306s500 381 867 270v285H-90z"/>
+ <path fill="url(#wave)" d="M-90 860c260-30 435-303 687-303 310 0 431 360 907 248v222H-90z"/>
+ <path d="M-80 788c280 45 425-321 754-304s500 380 867 270M-90 860c260-30 435-303 687-303" stroke="#fff" stroke-opacity=".46" stroke-width="2"/>
+</svg>

@@ -6,6 +6,7 @@ import '@fontsource-variable/figtree/wght.css';
 import '@fontsource-variable/figtree/wght-italic.css';
 import '@fontsource-variable/sora/wght.css';
 import './index.css';
+import './glass.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
