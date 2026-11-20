@@ -61,7 +61,7 @@ export default function QuizGame() {
       setCurrentIndex(0); setGameOver(false); setSelectedOption(null); setConsecutiveWrong(0);
       setXpGained(0); setXpLost(0); setQuizResults([]); setShowXpAnimation(false);
       answerLock.current = false; setPending(false);
-    } catch (error) { setSelectedChapter(null); setNotification({ message: (error as Error).message, type: 'error' }); }
+    } catch (error) { setNotification({ message: (error as Error).message, type: 'error' }); }
     finally { setLoading(false); }
   };
 
@@ -377,6 +377,7 @@ export default function QuizGame() {
           </div>
 
           <div className="flex flex-col gap-3 w-full">
+            {notification && <p role="alert" className="text-red-400">{notification.message}</p>}
             <button 
               onClick={() => startQuiz()} 
               className="btn-primary w-full bg-butter text-forest hover:bg-butter/90"

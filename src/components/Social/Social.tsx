@@ -3,6 +3,8 @@ import { Calendar as CalendarIcon, Bell, Clock, MapPin, Plus, X, ChevronLeft, Ch
 import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, getDoc } from '../../lib/local';
 import { db, auth } from '../../lib/local';
 
+import { eventsInRange, localMidnight } from '../../lib/calendar';
+
 const monthColors = [
   { bg: '#E6D5B3', text: '#4A3022' }, // Shortbread
   { bg: '#CBA374', text: '#4A3022' }, // Toast
@@ -74,7 +76,8 @@ export default function Social() {
   const [showModal, setShowModal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'agenda'>('grid');
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
+  const [monthDate, setMonthDate] = useState(() => new Date());
+  const selectedMonth = monthDate.getMonth();
   const [dayFilter, setDayFilter] = useState<'today' | 'tomorrow' | 'all'>('all');
   const [newEvent, setNewEvent] = useState({
     title: '',
@@ -84,7 +87,7 @@ export default function Social() {
     location: ''
   });
 
-  const currentYear = new Date().getFullYear();
+  const currentYear = monthDate.getFullYear();
 
   useEffect(() => {
     const fetchUserRole = async () => {
@@ -96,7 +99,7 @@ export default function Social() {
         }
       }
     };
-    fetchUserRole();
+    fetchUserRole().catch(err => setError(err.message));
 
     const q = query(collection(db, 'events'), orderBy('startDate', 'asc'));
     const unsub = onSnapshot(q, (snap) => {
@@ -128,57 +131,38 @@ export default function Social() {
   const getProgress = (start: string, end: string) => {
     if (!start || !end || start === end) return 0;
     const now = new Date().getTime();
-    const s = new Date(start).getTime();
-    const e = new Date(end).getTime() + 86400000; // Add 1 day to include the end date fully
+    const s = localMidnight(start).getTime();
+    const endDay = localMidnight(end);
+    const e = endDay.setDate(endDay.getDate() + 1);
     if (now < s) return 0;
     if (now > e) return 100;
     return ((now - s) / (e - s)) * 100;
   };
 
-  const filteredEvents = events.filter(event => {
-    if (!event.startDate) return false;
-    const [startYear, startMonthStr, startDayStr] = event.startDate.split('-');
-    const startMonth = parseInt(startMonthStr, 10) - 1;
-    const startDay = parseInt(startDayStr, 10);
-    
-    let endMonth = startMonth;
-    if (event.endDate) {
-      const [, endMonthStr] = event.endDate.split('-');
-      endMonth = parseInt(endMonthStr, 10) - 1;
-    }
-    
-    // Check if the selected month falls within the event's start and end months
-    const inMonth = selectedMonth >= startMonth && selectedMonth <= endMonth;
-    if (!inMonth) return false;
+  const day = new Date();
+  if (dayFilter === 'tomorrow') day.setDate(day.getDate() + 1);
+  const filteredEvents = dayFilter === 'all'
+    ? eventsInRange(events, new Date(currentYear, selectedMonth, 1), new Date(currentYear, selectedMonth + 1, 0))
+    : eventsInRange(events, day, day);
 
-    if (dayFilter === 'all') return true;
-
-    const today = new Date();
-    const eventDate = new Date(parseInt(startYear), startMonth, startDay);
-    
-    if (dayFilter === 'today') {
-      return eventDate.getDate() === today.getDate() && eventDate.getMonth() === today.getMonth() && eventDate.getFullYear() === today.getFullYear();
-    }
-    
-    if (dayFilter === 'tomorrow') {
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      return eventDate.getDate() === tomorrow.getDate() && eventDate.getMonth() === tomorrow.getMonth() && eventDate.getFullYear() === tomorrow.getFullYear();
-    }
-
-    return true;
-  });
+  const selectDay = (filter: 'today' | 'tomorrow') => {
+    const target = new Date();
+    if (filter === 'tomorrow') target.setDate(target.getDate() + 1);
+    setMonthDate(target);
+    setDayFilter(filter);
+  };
 
   const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
   const selectedMonthName = new Date(currentYear, selectedMonth, 1).toLocaleString('default', { month: 'long' });
 
   const handleMonthClick = (index: number) => {
-    setSelectedMonth(index);
+    setDayFilter('all');
+    setMonthDate(new Date(currentYear, index, 1));
     setViewMode('agenda');
   };
 
-  const nextMonth = () => setSelectedMonth(prev => (prev + 1) % 12);
-  const prevMonth = () => setSelectedMonth(prev => (prev - 1 + 12) % 12);
+  const nextMonth = () => handleMonthClick(selectedMonth + 1);
+  const prevMonth = () => handleMonthClick(selectedMonth - 1);
 
   return (
     <div className="p-6 space-y-8 max-w-6xl mx-auto pb-32">
@@ -254,14 +238,14 @@ export default function Social() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-2">
               <button 
-                onClick={() => setDayFilter('today')}
+                onClick={() => selectDay('today')}
                 aria-pressed={dayFilter === 'today'}
                 className={`px-4 py-2 rounded-full font-bold text-sm transition-all border ${dayFilter === 'today' ? 'bg-butter text-forest border-butter' : 'bg-transparent text-butter/60 border-butter/20 hover:border-butter/40 hover:text-butter'}`}
               >
                 Today
               </button>
               <button 
-                onClick={() => setDayFilter('tomorrow')}
+                onClick={() => selectDay('tomorrow')}
                 aria-pressed={dayFilter === 'tomorrow'}
                 className={`px-4 py-2 rounded-full font-bold text-sm transition-all border ${dayFilter === 'tomorrow' ? 'bg-butter text-forest border-butter' : 'bg-transparent text-butter/60 border-butter/20 hover:border-butter/40 hover:text-butter'}`}
               >
@@ -291,7 +275,7 @@ export default function Social() {
               const isContinuous = event.endDate && event.endDate !== event.startDate;
               const progress = isContinuous ? getProgress(event.startDate, event.endDate) : 0;
               
-              const startDateObj = new Date(event.startDate);
+              const startDateObj = localMidnight(event.startDate);
               const dayOfWeek = startDateObj.toLocaleString('default', { weekday: 'short' }).toUpperCase();
               const dayOfMonth = startDateObj.getDate();
               const monthStr = startDateObj.toLocaleString('default', { month: 'short' }).toUpperCase();

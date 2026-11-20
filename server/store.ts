@@ -241,12 +241,13 @@ export class LocalStore {
           requireValue(after.uid === parts[1] && ['admin', 'student'].includes(after.role), 'Invalid user.');
           text(after.name, 'name', 50);
           const username = accountName(after.username);
+          after.username = username;
           requireValue(Number.isFinite(after.xp) && after.xp >= 0, 'Invalid username or XP.');
           requireValue(typeof after.isBanned === 'boolean' && ['studentId', 'roll', 'grade', 'phone'].every(key => typeof after[key] === 'string' && after[key].length <= 100), 'Invalid student information.');
           if (before?.role === 'admin' && after.role !== 'admin') this.requireOtherAdmin(parts[1]);
           if (before?.role === 'admin' && !before.isBanned && after.isBanned) this.requireOtherAdmin(parts[1]);
           if (before?.username !== after.username) {
-            requireValue(!this.list('users').some(row => row.id !== parts[1] && row.data.username.toLowerCase() === username.toLowerCase()), 'Username already taken.', 409);
+            requireValue(!this.list('users').some(row => row.id !== parts[1] && row.data.username.trim().toLowerCase() === username.toLowerCase()), 'Username already taken.', 409);
             requireValue(actor.role === 'admin' || !before?.lastUsernameChange || Date.now() - Date.parse(before.lastUsernameChange) >= 14 * 86400000, 'You can change your username once every 14 days.');
             after.lastUsernameChange = new Date().toISOString();
             const account = this.db.prepare('SELECT username FROM accounts WHERE uid = ?').get(parts[1]) as any;

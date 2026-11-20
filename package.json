@@ -13,7 +13,7 @@
     "preview": "node server/index.ts",
     "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
     "lint": "tsc --noEmit",
-    "test": "node --test tests/server.test.mjs",
+    "test": "node --test",
     "web:build": "npm run build && node scripts/build-web.mjs",
     "web:package": "npm run web:build && powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/package-web.ps1",
     "cloudflare:dev": "npm run build && wrangler dev",

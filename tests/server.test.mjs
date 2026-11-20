@@ -6,8 +6,8 @@ import { tmpdir } from 'node:os';
 import { join, resolve, sep, basename } from 'node:path';
 import { createApp } from '../server/index.ts';
 
-async function serve(databasePath = ':memory:') {
-  const { app, store } = createApp({ databasePath });
+async function serve(databasePath = ':memory:', previewOrigin) {
+  const { app, store } = createApp({ databasePath, previewOrigin });
   const server = app.listen(0, '127.0.0.1');
   await once(server, 'listening');
   const url = `http://127.0.0.1:${server.address().port}`;
@@ -156,7 +156,8 @@ test('last-admin protection and username changes keep login in sync', async t =>
   for (const operation of [{ type: 'delete' }, { type: 'update', data: { role: 'student' } }, { type: 'update', data: { isBanned: true } }]) {
     assert.equal((await app.call('/data/write', { operations: [{ ...operation, path: `users/${app.adminId}` }] }, app.admin)).status, 409);
   }
-  assert.equal((await app.call('/data/write', { operations: [{ type: 'update', path: `users/${app.adminId}`, data: { username: 'newprincipal' } }] }, app.admin)).status, 200);
+  assert.equal((await app.call('/data/write', { operations: [{ type: 'update', path: `users/${app.adminId}`, data: { username: ' newprincipal ' } }] }, app.admin)).status, 200);
+  assert.equal(app.store.get(`users/${app.adminId}`).username, 'newprincipal');
   assert.equal((await app.call('/auth/login', { username: 'newprincipal', password: 'local-test-password' })).status, 200);
 });
 
@@ -189,4 +190,15 @@ test('cross-site requests are blocked and AI is optional', async t => {
     assert.equal(response.status, 503); assert.match(response.data.error, /optional/);
     assert.equal((await app.call('/status')).status, 200);
   } finally { if (original !== undefined) process.env.GEMINI_API_KEY = original; }
+});
+
+test('embedded preview uses its public origin and partitioned HTTPS session cookie', async t => {
+  const origin = 'https://preview.example.test';
+  const app = await serve(':memory:', origin); t.after(() => app.close());
+  const setup = await app.call('/auth/setup', { username: 'principal', name: 'Admin', password: 'preview-password' }, undefined, { Origin: origin });
+  assert.equal(setup.status, 200);
+  for (const flag of ['Secure', 'Partitioned', 'SameSite=None', 'HttpOnly']) assert.ok(setup.headers.get('set-cookie').includes(flag));
+  assert.equal((await app.call('/auth/me', undefined, setup.cookie)).data.user.role, 'admin');
+  assert.equal((await app.call('/auth/logout', {}, setup.cookie, { Origin: 'https://other.example.test' })).status, 403);
+  assert.match((await app.call('/auth/logout', {}, setup.cookie, { Origin: origin })).headers.get('set-cookie'), /Partitioned/);
 });

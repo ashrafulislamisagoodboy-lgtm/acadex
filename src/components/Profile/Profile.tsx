@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { api, doc, getDoc, updateDoc, collection, query, where, getDocs, onSnapshot, setDoc, orderBy, limit } from '../../lib/local';
+import { api, doc, updateDoc, collection, query, onSnapshot, orderBy, limit } from '../../lib/local';
 import { signOut } from '../../lib/local';
 
 import { db, auth } from '../../lib/local';
@@ -12,6 +12,10 @@ import { Html5QrcodeScanner } from 'html5-qrcode';
 
 export default function Profile() {
   const { uid } = useParams();
+  return <ProfileView key={uid} uid={uid!} />;
+}
+
+function ProfileView({ uid }: { uid: string }) {
   const [userData, setUserData] = useState<any>(null);
   const [quizAttempts, setQuizAttempts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,17 +54,7 @@ export default function Profile() {
     
     // Use onSnapshot for real-time updates (important for Brain Gains feedback)
     const unsubscribe = onSnapshot(doc(db, 'users', uid), (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        setUserData(data);
-        setEditData({
-          username: data.username || '',
-          studentId: data.studentId || '',
-          roll: data.roll || '',
-          grade: data.grade || '',
-          phone: data.phone || ''
-        });
-      }
+      setUserData(snapshot.exists() ? snapshot.data() : null);
       setLoading(false);
     }, (err: any) => {
       console.error("Profile: Failed to fetch user data:", err);
@@ -96,7 +90,6 @@ export default function Profile() {
           const profileUrl = new URL(decodedText);
           const profileUid = profileUrl.pathname.split('/').pop();
           if (profileUid) {
-            scanner.clear().catch(err => console.error("Failed to clear scanner", err));
             setShowScanner(false);
             navigate(`/profile/${profileUid}`);
           }
@@ -115,29 +108,9 @@ export default function Profile() {
   const handleUpdateProfile = async () => {
     if (!uid || !userData) return;
     
-    // Check username change limit (14 days)
-    if (editData.username !== userData.username) {
-      const lastChange = new Date(userData.lastUsernameChange);
-      const now = new Date();
-      const diffDays = Math.ceil(Math.abs(now.getTime() - lastChange.getTime()) / (1000 * 60 * 60 * 24));
-      
-      if (diffDays < 14) {
-        setError(`You can only change your username once every 14 days. ${14 - diffDays} days left.`);
-        return;
-      }
-
-      // Check unique username
-      const q = query(collection(db, 'users'), where('username', '==', editData.username));
-      const querySnapshot = await getDocs(q);
-      if (!querySnapshot.empty) {
-        setError('Username already taken.');
-        return;
-      }
-    }
-
     try {
       const updatePayload: any = {
-        username: editData.username,
+        username: editData.username.trim(),
         studentId: editData.studentId,
         roll: editData.roll,
         grade: editData.grade,
@@ -152,6 +125,19 @@ export default function Profile() {
       setError(err.message);
     }
   };
+
+  const toggleEditing = () => {
+    if (!isEditing) {
+      const { username, studentId, roll, grade, phone } = userData;
+      setEditData({ username, studentId, roll, grade, phone });
+    }
+    setError('');
+    setIsEditing(!isEditing);
+  };
+
+  useEffect(() => () => {
+    if (previewImage) URL.revokeObjectURL(previewImage.url);
+  }, [previewImage]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'pfp' | 'banner') => {
     const file = e.target.files?.[0];
@@ -243,7 +229,7 @@ export default function Profile() {
       <div className="p-8 text-center space-y-4">
         <AlertCircle className="mx-auto text-red-500 mb-4" size={48} />
         <h2 className="text-xl font-bold text-butter">User not found</h2>
-        <p className="text-sm text-butter/60">Your profile data is missing or corrupted. Please sign out and log in again to repair it.</p>
+        <p className="text-sm text-butter/60">{error || 'This profile is no longer available.'}</p>
         <div className="flex flex-col gap-3 max-w-xs mx-auto mt-6">
           <button onClick={() => navigate('/')} className="btn-primary w-full">Back to Home</button>
           <button onClick={handleSignOut} className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all border border-red-500/20">
@@ -321,9 +307,9 @@ export default function Profile() {
             </h3>
             {isOwnProfile && (
               <div className="flex flex-col gap-2">
-                <button onClick={() => setIsEditing(!isEditing)} className="text-forest hover:text-forest/80 transition-colors flex items-center gap-1 text-xs font-bold uppercase tracking-widest">
+                <button onClick={toggleEditing} className="text-forest hover:text-forest/80 transition-colors flex items-center gap-1 text-xs font-bold uppercase tracking-widest">
                   <Edit2 size={14} />
-                  Edit Profile
+                  {isEditing ? 'Cancel editing' : 'Edit Profile'}
                 </button>
               </div>
             )}
@@ -396,7 +382,7 @@ export default function Profile() {
                     value={editData.username}
                     onChange={(e) => setEditData({ ...editData, username: e.target.value })}
                   />
-                  <button onClick={handleUpdateProfile} className="text-green-600 hover:text-green-700 transition-colors">
+                  <button aria-label="Save profile" onClick={handleUpdateProfile} className="text-green-600 hover:text-green-700 transition-colors">
                     <CheckCircle size={20} />
                   </button>
                 </div>
