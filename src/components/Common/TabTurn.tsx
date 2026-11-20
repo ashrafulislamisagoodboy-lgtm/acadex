@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { BookOpen, CalendarDays, Home, Settings, Trophy, User } from 'lucide-react';
 
 export const sections = [
@@ -18,7 +18,7 @@ export default function TabTurn({ section }: { section: Section }) {
   const previous = useRef(section);
   const sequence = useRef(0);
   const [turn, setTurn] = useState<Turn | null>(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const from = previous.current;
     previous.current = section;
     if (from === section) return;
@@ -30,7 +30,7 @@ export default function TabTurn({ section }: { section: Section }) {
   if (!turn || turn.to !== section) return null;
   const OldIcon = turn.from.icon, NewIcon = turn.to.icon;
   const direction = sections.indexOf(turn.to) > sections.indexOf(turn.from) ? 1 : -1;
-  return <div key={turn.id} className="tab-turn" aria-hidden="true"
+  return <div key={turn.id} className="tab-turn" data-direction={direction > 0 ? 'forward' : 'back'} aria-hidden="true"
     style={{ '--turn-direction': direction, '--turn-tint': turn.to.tint } as CSSProperties}>
     <div className="tab-turn__lens">
       <span className="tab-turn__coin">

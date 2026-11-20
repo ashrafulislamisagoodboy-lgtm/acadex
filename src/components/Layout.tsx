@@ -97,8 +97,10 @@ export default function Layout({ user }: LayoutProps) {
       <TabTurn section={section} />
 
       <main id="main-content" className="app-main" tabIndex={-1}>
-        <div key={location.pathname} className="route-reveal" data-page={location.pathname}>
-          <Outlet />
+        <div key={location.pathname} className="route-stage">
+          <div className="route-reveal" data-page={location.pathname}>
+            <Outlet />
+          </div>
         </div>
       </main>
 
