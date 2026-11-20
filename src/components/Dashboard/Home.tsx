@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import { ArrowRight, ArrowUpRight, BookOpen, CalendarDays, Crown, Settings } from 'lucide-react';
-import { auth, db, doc, onSnapshot } from '../../lib/local';
+import { auth } from '../../lib/local';
 
 import FieldAtlas from '../Common/FieldAtlas';
 
@@ -13,12 +12,7 @@ const index = [
 ];
 
 export default function Home() {
-  const [profile, setProfile] = useState<any>(null);
-  const [error, setError] = useState('');
-  useEffect(() => {
-    if (!auth.currentUser) return;
-    return onSnapshot(doc(db, 'users', auth.currentUser.uid), snap => { setProfile(snap.data()); setError(''); }, e => setError(e.message));
-  }, []);
+  const { profile, error } = useOutletContext<{ profile: { name?: string; role?: string; xp?: number; totalQuizzesPlayed?: number; achievements?: unknown[] } | null; error: string }>();
   const xp = profile?.xp ?? 0;
   const date = new Date().toLocaleDateString('en', {weekday:'long', month:'long', day:'numeric'});
   return <div className="desk">

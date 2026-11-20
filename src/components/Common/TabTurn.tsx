@@ -38,7 +38,7 @@ export default function TabTurn({ section }: { section: Section }) {
     if (from === section) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setTurn(null); return; }
     setTurn({ from, to: section, start: anchor(from), end: anchor(section), id: ++sequence.current });
-    const end = window.setTimeout(() => setTurn(null), 840);
+    const end = window.setTimeout(() => setTurn(null), 410);
     return () => window.clearTimeout(end);
   }, [section]);
   if (!turn || turn.to !== section) return null;

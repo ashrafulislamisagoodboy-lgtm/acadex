@@ -1,7 +1,7 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { User, LogOut, BookOpen } from 'lucide-react';
 import { auth, db, signOut, doc, onSnapshot, type LocalUser } from '../lib/local';
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { cn } from '../lib/utils';
 
 import TabTurn, { sections } from './Common/TabTurn';
@@ -17,15 +17,14 @@ export default function Layout({ user }: LayoutProps) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [userData, setUserData] = useState<any>(null);
 
+  const [profileError, setProfileError] = useState('');
+
   useEffect(() => {
     if (!user) return;
     const unsubscribe = onSnapshot(doc(db, 'users', user.uid), (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        setUserData(data);
-        setIsAdmin(data.role === 'admin');
-      }
-    });
+      const data = snapshot.data();
+      setUserData(data); setIsAdmin(data?.role === 'admin'); setProfileError('');
+    }, error => setProfileError(error.message));
     return () => unsubscribe();
   }, [user]);
 
@@ -100,7 +99,9 @@ export default function Layout({ user }: LayoutProps) {
       <main id="main-content" className="app-main" tabIndex={-1}>
         <div key={location.pathname} className="route-stage">
           <div className="route-reveal" data-page={location.pathname}>
-            <Outlet />
+            <Suspense fallback={<p className="practice-rule" role="status">Loading {section.label}…</p>}>
+              <Outlet context={{ profile: userData, error: profileError }} />
+            </Suspense>
           </div>
         </div>
       </main>
