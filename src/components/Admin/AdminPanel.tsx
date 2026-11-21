@@ -1284,29 +1284,30 @@ export default function AdminPanel() {
 
         {activeTab === 'calendar' && (
           <motion.div key="calendar" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-            <div className="card space-y-4">
+            <div className="card calendar-import space-y-4">
               <h3 className="font-bold text-forest flex items-center gap-2">
-                <Sparkles size={20} className="text-yellow-500" />
-                AI Calendar Importer
+                <Sparkles size={20} className="text-forest" />
+                Import a school calendar
               </h3>
-              <p className="text-xs text-gray-500">Upload a photo of your school calendar. AI will extract school events (sports, tests, etc.) while filtering out religious and principal meetings.</p>
+              <p id="calendar-import-help">Upload an image or PDF. AI adds school events such as tests and sports days, and skips religious holidays and staff meetings.</p>
               
               <form onSubmit={handleGenerateAICalendar} className="space-y-4">
                 <div className="relative">
                   <input
                     type="file"
                     accept="image/*,application/pdf"
-                    className="hidden"
+                    className="sr-only"
+                    aria-describedby="calendar-import-help"
                     id="calendar-upload"
                     onChange={(e) => setCalendarFile(e.target.files?.[0] || null)}
                   />
                   <label
                     htmlFor="calendar-upload"
-                    className="w-full flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-200 rounded-2xl hover:border-forest hover:bg-forest/5 transition-all cursor-pointer"
+                    className="calendar-import__file"
                   >
-                    <Upload className="text-gray-400 mb-2" size={32} />
-                    <span className="text-sm font-bold text-gray-600">
-                      {calendarFile ? calendarFile.name : 'Choose Calendar Image/PDF'}
+                    <Upload aria-hidden="true" size={26} />
+                    <span className="font-bold">
+                      {calendarFile ? calendarFile.name : 'Choose an image or PDF'}
                     </span>
                   </label>
                 </div>
@@ -1319,12 +1320,12 @@ export default function AdminPanel() {
                   {aiLoading ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-white"></div>
-                      Extracting Events...
+                      Importing events…
                     </>
                   ) : (
                     <>
                       <Sparkles size={18} />
-                      Extract & Add Events
+                      Import events
                     </>
                   )}
                 </button>
