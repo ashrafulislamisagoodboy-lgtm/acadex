@@ -15,7 +15,7 @@ export default function DailySpark({ day }: { day: number }) {
   const [subject, question, options, correct, explanation] = prompts[day];
   const [answer, setAnswer] = useState<number | null>(null);
   return <section className="spark-card" id="daily-spark" aria-labelledby="spark-title" tabIndex={-1}>
-    <div className="studio-label">Margin question <span>{subject}</span></div>
+    <div className="studio-label">Daily question <span>{subject}</span></div>
     <h2 id="spark-title">{question}</h2>
     <div className="spark-options">{options.map((option,i) => <button key={option} disabled={answer !== null} onClick={() => setAnswer(i)} data-correct={answer !== null && correct === i}>
       <b aria-hidden="true">{i ? 'B' : 'A'}</b>{option}{answer !== null && correct === i && <Check size={16} aria-hidden="true"/>}</button>)}</div>
