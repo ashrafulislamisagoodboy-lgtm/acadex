@@ -31,17 +31,34 @@ body { background: #1c2a47; }
 /* The photograph sits outside the route so the hills stay continuous between tabs. */
 #root { isolation:isolate; }
 .live-wallpaper { position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden; background:linear-gradient(#85bac7 0 44%,#568345 55%,#254c39); }
-.meadow-scene { position:absolute; inset:-2%; background:url('/meadow.jpg') 52% center / cover no-repeat; }
+.meadow-scene { position:absolute; inset:0; background:url('/meadow.jpg') 52% center / cover no-repeat; }
 .live-wallpaper::after { content:''; position:absolute; inset:0; background:linear-gradient(#11252630,#10262048); }
 #root:has(.auth-page, .desk) .live-wallpaper::after { opacity:0; }
 .auth-page .portal-footer { color:#fff; text-shadow:0 1px 4px #142e1a; border-color:#ffffff75; }
+/* The photograph anchors the horizon. Only the transparent weather layers
+   move: the clouds cross the sky while grass bends around its rooted edge. */
+.meadow-cloud { position:absolute; left:0; aspect-ratio:488/164; background:url('/meadow-cloud.webp') center / contain no-repeat; }
+.meadow-cloud--far { width:clamp(110px,15vw,260px); top:18%; opacity:.58; transform:translateX(12vw) scaleX(-1); --cloud-facing:-1; }
+.meadow-cloud--near { width:clamp(160px,24vw,430px); top:5%; opacity:.82; transform:translateX(59vw); --cloud-facing:1; }
+.meadow-grass { position:absolute; inset:auto -30px 0; background:url('/meadow-blades.webp') repeat-x left bottom / auto 100%; transform-origin:center bottom; }
+.meadow-grass--far { height:clamp(64px,12vh,130px); opacity:.72; background-position-x:147px; }
+.meadow-grass--near { height:clamp(84px,16vh,175px); }
 @media (prefers-reduced-motion:no-preference) {
-  .meadow-scene { animation:meadow-pan 22s ease-in-out -6s infinite alternate; }
-  .live-wallpaper[data-paused='true'] .meadow-scene { animation-play-state:paused; }
+  .meadow-cloud--far { animation:cloud-drift 140s linear -45s infinite; }
+  .meadow-cloud--near { animation:cloud-drift 95s linear -64s infinite; }
+  .meadow-grass--far { animation:grass-breeze 4.9s ease-in-out -2s infinite alternate; }
+  .meadow-grass--near { animation:grass-breeze 3.8s ease-in-out -.7s infinite alternate; }
+  .live-wallpaper[data-paused='true'] .meadow-scene > span { animation-play-state:paused; }
 }
-@keyframes meadow-pan {
-  from { transform:translate3d(-.8%,.4%,0) scale(1.01); }
-  to { transform:translate3d(.8%,-.4%,0) scale(1.045); }
+@keyframes cloud-drift {
+  from { transform:translate3d(-105%,0,0) scaleX(var(--cloud-facing)); }
+  to { transform:translate3d(101vw,0,0) scaleX(var(--cloud-facing)); }
+}
+@keyframes grass-breeze {
+  0% { transform:skewX(-3deg); }
+  48% { transform:skewX(5deg); }
+  70% { transform:skewX(2deg); }
+  100% { transform:skewX(8deg); }
 }
 .portal-tools, .wallpaper-control { display:flex; align-items:center; }
 .portal-tools { gap:.65rem; }

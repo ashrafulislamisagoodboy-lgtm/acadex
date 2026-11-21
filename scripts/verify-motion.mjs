@@ -31,7 +31,7 @@ app.whenReady().then(async () => {
     if (await evaluate("document.querySelector('.wallpaper-control').getAttribute('aria-label') === 'Resume background motion'")) {
       await evaluate("document.querySelector('.wallpaper-control').click()");
     }
-    const meadowPosition = () => evaluate("getComputedStyle(document.querySelector('.meadow-scene')).transform");
+    const meadowPosition = () => evaluate("JSON.stringify(Array.from(document.querySelectorAll('.meadow-scene > span'), el => getComputedStyle(el).transform))");
     const moving = await meadowPosition(); await wait(1000);
     assert.notEqual(await meadowPosition(), moving, 'The live wallpaper moves');
     await evaluate("document.querySelector('.wallpaper-control').click()"); await wait(80);
@@ -61,7 +61,7 @@ app.whenReady().then(async () => {
     await wait(300);
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.route-reveal')).animationName"), 'none');
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.star-trace')).animationName"), 'none');
-    assert.equal(await evaluate("getComputedStyle(document.querySelector('.meadow-scene')).animationName"), 'none');
+    assert.equal(await evaluate("Array.from(document.querySelectorAll('.meadow-scene > span')).every(el => getComputedStyle(el).animationName === 'none')"), true);
     await evaluate("document.querySelector('.mobile-dock a[href=\"/quiz\"]').click()");
     await ready('[data-page="/quiz"]');
     assert.equal(await evaluate("document.querySelector('.tab-turn') === null"), true);

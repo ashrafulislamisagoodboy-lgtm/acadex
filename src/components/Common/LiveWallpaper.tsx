@@ -28,7 +28,12 @@ export default function LiveWallpaper({ children }: { children: ReactNode }) {
   }
   return <MotionPreference.Provider value={{ paused, toggle }}>
     <div className="live-wallpaper" aria-hidden="true" data-paused={paused || hidden}>
-      <div className="meadow-scene" />
+      <div className="meadow-scene">
+        <span className="meadow-cloud meadow-cloud--far" />
+        <span className="meadow-cloud meadow-cloud--near" />
+        <span className="meadow-grass meadow-grass--far" />
+        <span className="meadow-grass meadow-grass--near" />
+      </div>
     </div>
     {children}
   </MotionPreference.Provider>;
