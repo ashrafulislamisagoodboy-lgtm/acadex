@@ -1,10 +1,13 @@
+import { createPortal } from 'react-dom';
+import './passport.css';
+import { readFileUrl } from '../../lib/imports';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { api, doc, getDoc, updateDoc, collection, query, where, getDocs, onSnapshot, setDoc, orderBy, limit } from '../../lib/local';
+import { api, doc, updateDoc, collection, query, onSnapshot, orderBy, limit } from '../../lib/local';
 import { signOut } from '../../lib/local';
 
 import { db, auth } from '../../lib/local';
-import { User, Shield, Trophy, Star, QrCode, Scan, Edit2, CheckCircle, AlertCircle, Camera, LogOut, Sparkles, Book, KeyRound, Eye, EyeOff } from 'lucide-react';
+import { User, Shield, Trophy, Star, QrCode, Scan, Edit2, CheckCircle, AlertCircle, Camera, LogOut, Sparkles, Compass, Book, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../lib/utils';
 import { QRCodeSVG } from 'qrcode.react';
@@ -12,6 +15,10 @@ import { Html5QrcodeScanner } from 'html5-qrcode';
 
 export default function Profile() {
   const { uid } = useParams();
+  return <ProfileView key={uid} uid={uid!} />;
+}
+
+function ProfileView({ uid }: { uid: string }) {
   const [userData, setUserData] = useState<any>(null);
   const [quizAttempts, setQuizAttempts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,17 +57,7 @@ export default function Profile() {
     
     // Use onSnapshot for real-time updates (important for Brain Gains feedback)
     const unsubscribe = onSnapshot(doc(db, 'users', uid), (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        setUserData(data);
-        setEditData({
-          username: data.username || '',
-          studentId: data.studentId || '',
-          roll: data.roll || '',
-          grade: data.grade || '',
-          phone: data.phone || ''
-        });
-      }
+      setUserData(snapshot.exists() ? snapshot.data() : null);
       setLoading(false);
     }, (err: any) => {
       console.error("Profile: Failed to fetch user data:", err);
@@ -96,7 +93,6 @@ export default function Profile() {
           const profileUrl = new URL(decodedText);
           const profileUid = profileUrl.pathname.split('/').pop();
           if (profileUid) {
-            scanner.clear().catch(err => console.error("Failed to clear scanner", err));
             setShowScanner(false);
             navigate(`/profile/${profileUid}`);
           }
@@ -115,29 +111,9 @@ export default function Profile() {
   const handleUpdateProfile = async () => {
     if (!uid || !userData) return;
     
-    // Check username change limit (14 days)
-    if (editData.username !== userData.username) {
-      const lastChange = new Date(userData.lastUsernameChange);
-      const now = new Date();
-      const diffDays = Math.ceil(Math.abs(now.getTime() - lastChange.getTime()) / (1000 * 60 * 60 * 24));
-      
-      if (diffDays < 14) {
-        setError(`You can only change your username once every 14 days. ${14 - diffDays} days left.`);
-        return;
-      }
-
-      // Check unique username
-      const q = query(collection(db, 'users'), where('username', '==', editData.username));
-      const querySnapshot = await getDocs(q);
-      if (!querySnapshot.empty) {
-        setError('Username already taken.');
-        return;
-      }
-    }
-
     try {
       const updatePayload: any = {
-        username: editData.username,
+        username: editData.username.trim(),
         studentId: editData.studentId,
         roll: editData.roll,
         grade: editData.grade,
@@ -152,6 +128,19 @@ export default function Profile() {
       setError(err.message);
     }
   };
+
+  const toggleEditing = () => {
+    if (!isEditing) {
+      const { username, studentId, roll, grade, phone } = userData;
+      setEditData({ username, studentId, roll, grade, phone });
+    }
+    setError('');
+    setIsEditing(!isEditing);
+  };
+
+  useEffect(() => () => {
+    if (previewImage) URL.revokeObjectURL(previewImage.url);
+  }, [previewImage]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'pfp' | 'banner') => {
     const file = e.target.files?.[0];
@@ -174,14 +163,7 @@ export default function Profile() {
     setUploadStatus('Processing image...');
     
     try {
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
-      const base64String = await base64Promise;
+      const base64String = await readFileUrl(file);
       setUploadStatus('Saving to database...');
       const updatePayload = type === 'pfp' ? { photoUrl: base64String } : { bannerUrl: base64String };
       
@@ -243,7 +225,7 @@ export default function Profile() {
       <div className="p-8 text-center space-y-4">
         <AlertCircle className="mx-auto text-red-500 mb-4" size={48} />
         <h2 className="text-xl font-bold text-butter">User not found</h2>
-        <p className="text-sm text-butter/60">Your profile data is missing or corrupted. Please sign out and log in again to repair it.</p>
+        <p className="text-sm text-butter/60">{error || 'This profile is no longer available.'}</p>
         <div className="flex flex-col gap-3 max-w-xs mx-auto mt-6">
           <button onClick={() => navigate('/')} className="btn-primary w-full">Back to Home</button>
           <button onClick={handleSignOut} className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all border border-red-500/20">
@@ -254,66 +236,36 @@ export default function Profile() {
     );
   }
 
+  const xp = userData.xp || 0;
+  const level = Math.floor(xp / 100) + 1;
+  const initials = (userData.name || userData.username || '?').trim().split(/\s+/).slice(0, 2).map((word: string) => word[0]).join('').toUpperCase();
   return (
-    <div className="p-6 space-y-8 pb-24">
-      <div className="relative">
-        {/* Banner */}
-        <div className="glass-card h-32 rounded-3xl overflow-hidden relative group">
-          {userData.bannerUrl ? (
-            <img src={userData.bannerUrl} alt="Banner" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-          ) : (
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-          )}
-          
-          {isOwnProfile && (
-            <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
-              <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageSelect(e, 'banner')} />
-              <Camera className="text-white" size={32} />
-            </label>
-          )}
+    <div className="learner-passport">
+      <header className="passport-cover">
+        <div className="passport-banner">
+          {userData.bannerUrl && <img src={userData.bannerUrl} alt="" referrerPolicy="no-referrer" />}
+          <span className="passport-imprint"><Compass size={19} aria-hidden="true" /> Acadex / Learner passport</span>
+          {isOwnProfile && <label className="passport-camera"><Camera size={16} aria-hidden="true" /><span>Change cover</span>
+            <input type="file" className="sr-only" accept="image/*" aria-label="Change cover" onChange={e => handleImageSelect(e, 'banner')} /></label>}
         </div>
-
-        {/* Profile Info Overlay */}
-        <div className="absolute -bottom-12 left-6 flex items-end gap-4">
-          <div className="relative group">
-            <div className="w-24 h-24 rounded-3xl bg-forest p-1 shadow-xl overflow-hidden border border-white/10">
-              <img 
-                src={userData.photoUrl || '/logo.png'} 
-                alt={userData.name} 
-                className="w-full h-full object-cover rounded-2xl" 
-                referrerPolicy="no-referrer"
-              />
-            </div>
-            
-            {isOwnProfile && (
-              <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer rounded-3xl">
-                <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageSelect(e, 'pfp')} />
-                <Camera className="text-white" size={24} />
-              </label>
-            )}
+        <div className="passport-details">
+          <div className="passport-photo">
+            {userData.photoUrl ? <img src={userData.photoUrl} alt="" referrerPolicy="no-referrer" /> : <span aria-hidden="true">{initials}</span>}
+            {isOwnProfile && <label className="passport-camera"><Camera size={16} aria-hidden="true" /><input className="sr-only" type="file" accept="image/*" aria-label="Change portrait" onChange={e => handleImageSelect(e, 'pfp')} /></label>}
           </div>
-          <div className="mb-2">
-            <h2 className="text-2xl font-black text-butter drop-shadow-md">{userData.name}</h2>
-            <p className="text-butter/80 font-bold text-sm drop-shadow-sm">@{userData.username}</p>
-          </div>
+          <div className="passport-name"><small>{userData.role === 'admin' ? 'Administrator' : 'Learner'}{userData.grade ? ` · Grade ${userData.grade}` : ''}</small><h1>{userData.name}</h1><p>@{userData.username}</p></div>
+          <button className="passport-share" onClick={() => setShowQR(true)}><QrCode size={18} /> Profile QR</button>
         </div>
-      </div>
-
-      <div className="pt-12 space-y-6">
-        <div className="flex gap-4">
-          <div className="flex-1 card flex flex-col items-center justify-center py-6 text-center bg-butter border-forest/10">
-            <Trophy className="text-forest mb-2" size={24} />
-            <p className="text-2xl font-black text-forest">{userData.xp}</p>
-            <p className="text-[11px] font-bold uppercase text-forest/40 tracking-widest">Total <b>BRAIN GAINS</b></p>
-          </div>
-          <div className="flex-1 card flex flex-col items-center justify-center py-6 text-center bg-butter border-forest/10">
-            <Star className="text-yellow-600 mb-2" size={24} />
-            <p className="text-2xl font-black text-forest">{userData.achievements?.length || 0}</p>
-            <p className="text-[11px] font-bold uppercase text-forest/40 tracking-widest">Achievements</p>
-          </div>
+        <div className="passport-ledger">
+          <div className="passport-level"><strong>Level {level}</strong><progress value={xp % 100} max="100" aria-label={`Progress to level ${level + 1}`} /><small>{100 - xp % 100} XP to level {level + 1}</small></div>
+          <div><strong>{xp.toLocaleString()}</strong><small>Total XP</small></div>
+          <div><strong>{(userData.totalQuizzesPlayed || 0).toLocaleString()}</strong><small>Quizzes finished</small></div>
+          <div><strong>{userData.achievements?.length || 0}</strong><small>Earned stamps</small></div>
         </div>
-
-        <div className="card space-y-4 bg-butter border-forest/10">
+      </header>
+      <nav aria-label="Passport pages" className="passport-index"><span>Page index</span><a href="#passport-record">01 · Record</a><a href="#passport-log">02 · Practice</a><a href="#passport-stamps">03 · Stamps</a></nav>
+      <div className="passport-pages space-y-6">
+        <div id="passport-record" className="passport-page card space-y-4 bg-butter border-forest/10">
           <div className="flex justify-between items-center mb-2">
             <h3 className="font-bold text-forest flex items-center gap-2">
               <User size={18} className="text-forest" />
@@ -321,9 +273,9 @@ export default function Profile() {
             </h3>
             {isOwnProfile && (
               <div className="flex flex-col gap-2">
-                <button onClick={() => setIsEditing(!isEditing)} className="text-forest hover:text-forest/80 transition-colors flex items-center gap-1 text-xs font-bold uppercase tracking-widest">
+                <button onClick={toggleEditing} className="text-forest hover:text-forest/80 transition-colors flex items-center gap-1 text-xs font-bold uppercase tracking-widest">
                   <Edit2 size={14} />
-                  Edit Profile
+                  {isEditing ? 'Cancel editing' : 'Edit Profile'}
                 </button>
               </div>
             )}
@@ -396,7 +348,7 @@ export default function Profile() {
                     value={editData.username}
                     onChange={(e) => setEditData({ ...editData, username: e.target.value })}
                   />
-                  <button onClick={handleUpdateProfile} className="text-green-600 hover:text-green-700 transition-colors">
+                  <button aria-label="Save profile" onClick={handleUpdateProfile} className="text-green-600 hover:text-green-700 transition-colors">
                     <CheckCircle size={20} />
                   </button>
                 </div>
@@ -408,10 +360,10 @@ export default function Profile() {
           {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
         </div>
 
-        <div className="card space-y-4 bg-butter border-forest/10">
+        <div id="passport-log" className="passport-page card space-y-4 bg-butter border-forest/10">
           <h3 className="font-bold text-forest flex items-center gap-2">
             <Book size={18} className="text-forest" />
-            Quiz History
+            Practice log
           </h3>
           <div className="space-y-3">
             {quizAttempts.length > 0 ? (
@@ -435,16 +387,16 @@ export default function Profile() {
           </div>
         </div>
 
-        <div className="card space-y-4 bg-butter border-forest/10">
+        <div id="passport-stamps" className="passport-page card space-y-4 bg-butter border-forest/10">
           <h3 className="font-bold text-forest flex items-center gap-2">
             <Shield size={18} className="text-forest" />
-            Achievements
+            Achievement stamps
           </h3>
           <div className="flex flex-wrap gap-2">
             {userData.achievements?.length > 0 ? (
               userData.achievements.map((achievement: string, idx: number) => (
-                <span key={idx} className="bg-forest/10 text-forest px-3 py-1 rounded-full text-xs font-bold border border-forest/20">
-                  {achievement}
+                <span key={idx} className="passport-stamp">
+                  <Star size={16} aria-hidden="true" />{achievement}
                 </span>
               ))
             ) : (
@@ -540,10 +492,6 @@ export default function Profile() {
         )}
 
         <div className="flex gap-4">
-          <button onClick={() => setShowQR(true)} className="btn-secondary flex-1 py-4 flex items-center justify-center gap-2 bg-butter text-forest border-forest/10 hover:bg-butter/90">
-            <QrCode size={20} />
-            My QR
-          </button>
           <button onClick={() => setShowScanner(true)} className="btn-primary flex-1 py-4 flex items-center justify-center gap-2 bg-forest text-butter hover:bg-forest/90">
             <Scan size={20} />
             Scan QR
@@ -561,12 +509,13 @@ export default function Profile() {
         )}
       </div>
 
+      {createPortal(<>
       {showQR && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-8">
+        <div className="viewport-layer fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] flex items-center justify-center p-8">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="glass-card-dark rounded-3xl p-8 w-full max-w-xs text-center space-y-6 border"
+            className="profile-qr-panel glass-card-dark rounded-3xl p-8 w-full max-w-xs text-center space-y-6 border"
           >
             <h3 className="text-xl font-bold text-butter">Profile QR</h3>
             <div className="bg-white p-6 rounded-2xl flex justify-center">
@@ -580,7 +529,7 @@ export default function Profile() {
       )}
 
       {showScanner && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-8">
+        <div className="viewport-layer fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] flex flex-col items-center justify-center p-8">
           <div className="glass-card-dark rounded-3xl p-6 w-full max-w-sm space-y-4 border">
             <h3 className="text-xl font-bold text-butter text-center">Scan Profile QR</h3>
             <div id="reader" className="overflow-hidden rounded-2xl border-2 border-white/10"></div>
@@ -594,7 +543,7 @@ export default function Profile() {
       {/* Image Preview Modal */}
       <AnimatePresence>
         {previewImage && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[60] flex items-center justify-center p-6">
+          <div className="viewport-layer fixed inset-0 bg-black/80 backdrop-blur-md z-[60] flex items-center justify-center p-6">
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -632,6 +581,7 @@ export default function Profile() {
           </div>
         )}
       </AnimatePresence>
+      </>, document.body)}
     </div>
   );
 }

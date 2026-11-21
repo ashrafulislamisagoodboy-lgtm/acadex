@@ -1,0 +1,25 @@
+/* Size year cards by the room available to their seven date columns, rather
+   than by the device width. Short and six-week months share a top baseline. */
+.year-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr)); gap:1rem; }
+.year-grid .almanac-month { display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start; min-width:0; }
+.year-days { row-gap:.18rem; font-variant-numeric:tabular-nums; }
+.year-day { display:grid; place-items:center; min-height:1.6rem; }
+.year-day[aria-current='date'] { width:1.6rem; justify-self:center; border-radius:50%; background:#234f49; color:#fff; }
+.calendar-view .agenda-copy { overflow-wrap:anywhere; }
+.agenda-copy svg { flex-shrink:0; }
+.calendar-view .agenda-entry { background-color:#203c42eb; }
+.agenda-entry .text-butter\/60 { color:#d7e5e6; }
+.calendar-form-layer [role='dialog'] { max-height:calc(100dvh - 2rem); overflow:auto; overscroll-behavior:contain; background:#203039; color-scheme:dark; }
+.calendar-form-layer input { min-width:0; }
+html:has(.calendar-form-layer) { overflow:hidden; }
+@media(max-width:640px) {
+  .agenda-entry { padding:1rem; gap:.7rem; }
+  .agenda-entry > span:last-child { display:none; }
+  .agenda-picker { justify-content:space-between; gap:.2rem; }
+  .agenda-picker > div { gap:.15rem; }
+  .agenda-picker > div > button { display:none; } /* Keep the full-size arrow controls. */
+}
+@media(max-width:460px) {
+  .calendar-form-layer form .grid-cols-2 { grid-template-columns:minmax(0,1fr); }
+  .calendar-form-layer [role='dialog'] { padding:1rem; }
+}

@@ -1,16 +1,29 @@
+import { createPortal } from 'react-dom';
+import { readFileUrl, newStudentRows } from '../../lib/imports';
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc, arrayUnion, query, where, setDoc, getDoc, writeBatch, getDocsFromServer } from '../../lib/local';
 import { db, auth } from '../../lib/local';
-import { Shield, Users, BookOpen, Plus, Trash2, Star, CheckCircle, AlertCircle, Lock, Key, FileText, Upload, Sparkles, FolderInput, Calendar as CalendarIcon, X } from 'lucide-react';
+import { Search, LockKeyhole, Shield, Users, BookOpen, Plus, Trash2, Star, CheckCircle, AlertCircle, Lock, Key, FileText, Upload, Sparkles, FolderInput, Calendar as CalendarIcon, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../lib/utils';
 import { generateQuizFromBook, extractStudentsFromIDCards, extractEventsFromCalendar } from '../../lib/gemini';
 import { useNavigate } from 'react-router-dom';
 
+import './office.css';
+
+const stations = [
+  { id: 'users', label: 'Account directory', icon: Users },
+  { id: 'database', label: 'Student enrollment', icon: FolderInput },
+  { id: 'questions', label: 'Question bank', icon: BookOpen },
+  { id: 'books', label: 'Quiz generator', icon: Sparkles },
+  { id: 'calendar', label: 'Calendar import', icon: CalendarIcon },
+] as const;
+
 export default function AdminPanel() {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [activeTab, setActiveTab] = useState('users');
+  const [search, setSearch] = useState('');
   const [users, setUsers] = useState<any[]>([]);
   const [questions, setQuestions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -275,15 +288,7 @@ export default function AdminPanel() {
 
     setAiLoading(true);
     try {
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve) => {
-        reader.onload = () => {
-          const base64 = (reader.result as string).split(',')[1];
-          resolve(base64);
-        };
-      });
-      reader.readAsDataURL(idCardsFile);
-      const base64 = await base64Promise;
+      const base64 = (await readFileUrl(idCardsFile)).split(',')[1];
 
       const students = await extractStudentsFromIDCards({
         data: base64,
@@ -309,29 +314,13 @@ export default function AdminPanel() {
     setLoading(true);
     try {
       const batch = writeBatch(db);
-      let addedCount = 0;
-      
-      // We still need to check for duplicates, but we can do it more efficiently
-      // For now, let's just use the batch for the writes
-      for (const student of reviewStudents) {
-        const q = query(collection(db, 'admin_students'), where('studentId', '==', student.studentId));
-        const snapshot = await getDocs(q);
-        
-        if (snapshot.empty) {
-          const newDocRef = doc(db, 'admin_students', student.studentId);
-          batch.set(newDocRef, {
-            ...student,
-            createdAt: new Date().toISOString()
-          });
-          addedCount++;
-        }
+      const registry = await getDocs(collection(db, 'admin_students'));
+      const additions = newStudentRows(reviewStudents, registry.docs.map(row => row.id));
+      for (const student of additions) {
+        batch.set(doc(db, 'admin_students', student.studentId), { ...student, createdAt: new Date().toISOString() });
       }
-      
-      if (addedCount > 0) {
-        await batch.commit();
-      }
-      
-      showNotification(`Successfully added ${addedCount} new students!`);
+      if (additions.length) await batch.commit();
+      showNotification(`Added ${additions.length} students; skipped ${reviewStudents.length - additions.length} existing or repeated IDs.`);
       setReviewStudents(null);
       fetchData();
     } catch (err: any) {
@@ -347,15 +336,7 @@ export default function AdminPanel() {
 
     setAiLoading(true);
     try {
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve) => {
-        reader.onload = () => {
-          const base64 = (reader.result as string).split(',')[1];
-          resolve(base64);
-        };
-      });
-      reader.readAsDataURL(calendarFile);
-      const base64 = await base64Promise;
+      const base64 = (await readFileUrl(calendarFile)).split(',')[1];
 
       const extractedEvents = await extractEventsFromCalendar({
         data: base64,
@@ -476,18 +457,7 @@ export default function AdminPanel() {
 
     setAiLoading(true);
     try {
-      const reader = new FileReader();
-      
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => {
-          const base64 = (reader.result as string).split(',')[1];
-          resolve(base64);
-        };
-        reader.onerror = reject;
-      });
-      
-      reader.readAsDataURL(bookFile);
-      const data = await base64Promise;
+      const data = (await readFileUrl(bookFile)).split(',')[1];
       const mimeType = bookFile.type;
 
       const generatedQuestions = await generateQuizFromBook(bookTitle, { data, mimeType });
@@ -552,12 +522,15 @@ export default function AdminPanel() {
     );
   }
 
+  const term = search.trim().toLowerCase();
+  const matches = users.filter(user => [user.name, user.username, user.grade].some(value => String(value ?? '').toLowerCase().includes(term)));
   return (
-    <div className="p-6 space-y-8 relative">
+    <div className="office-workspace">
+      {createPortal(<>
       {/* Review Questions Modal */}
       <AnimatePresence>
         {reviewQuestions && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="viewport-layer fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -637,7 +610,7 @@ export default function AdminPanel() {
       {/* Review Students Modal */}
       <AnimatePresence>
         {reviewStudents && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="viewport-layer fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -697,7 +670,7 @@ export default function AdminPanel() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6"
+            className="viewport-layer fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6"
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -744,66 +717,42 @@ export default function AdminPanel() {
         )}
       </AnimatePresence>
 
-      {/* Tabs */}
-      <div className="glass-card flex gap-2 p-1.5 rounded-[2.5rem] border">
-        <button
-          onClick={() => setActiveTab('users')}
-          className={cn("flex-1 py-3 rounded-[2rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2", 
-            activeTab === 'users' ? "bg-forest text-butter shadow-xl shadow-forest/10 border border-forest/20" : "text-forest/40 hover:text-forest/60")}
-        >
-          <Users size={16} />
-          Students
-        </button>
-        <button
-          onClick={() => setActiveTab('questions')}
-          className={cn("flex-1 py-3 rounded-[2rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2", 
-            activeTab === 'questions' ? "bg-forest text-butter shadow-xl shadow-forest/10 border border-forest/20" : "text-forest/40 hover:text-forest/60")}
-        >
-          <BookOpen size={16} />
-          Books
-        </button>
-        <button
-          onClick={() => setActiveTab('books')}
-          className={cn("flex-1 py-3 rounded-[2rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2", 
-            activeTab === 'books' ? "bg-forest text-butter shadow-xl shadow-forest/10 border border-forest/20" : "text-forest/40 hover:text-forest/60")}
-        >
-          <Sparkles size={16} />
-          AI Gen
-        </button>
-        <button
-          onClick={() => setActiveTab('database')}
-          className={cn("flex-1 py-3 rounded-[2rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2", 
-            activeTab === 'database' ? "bg-forest text-butter shadow-xl shadow-forest/10 border border-forest/20" : "text-forest/40 hover:text-forest/60")}
-        >
-          <Plus size={16} />
-          DB
-        </button>
-        <button
-          onClick={() => setActiveTab('calendar')}
-          className={cn("flex-1 py-3 rounded-[2rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2", 
-            activeTab === 'calendar' ? "bg-forest text-butter shadow-xl shadow-forest/10 border border-forest/20" : "text-forest/40 hover:text-forest/60")}
-        >
-          <CalendarIcon size={16} />
-          Cal
-        </button>
-      </div>
-
+      </>, document.body)}
+      <header className="office-mast">
+        <div><span className="office-eyebrow"><Shield size={14} /> Acadex / Administration</span>
+          <h1>School office<span>.</span></h1><p>Manage learner access, teaching materials and school events.</p></div>
+        <div className="office-files" aria-hidden="true"><i /><i /><i><FolderInput size={32} /><b>ACADEX &nbsp; / &nbsp; RECORDS</b></i></div>
+      </header>
+      <div className="office-layout">
+        <nav className="office-index" aria-label="Office workspaces">
+          <span className="office-eyebrow">Workspace index</span>
+          <div className="office-tabs">{stations.map(({ id, label, icon: Icon }, index) =>
+            <button key={id} type="button" aria-pressed={activeTab === id} onClick={() => setActiveTab(id)}>
+              <Icon size={18} aria-hidden="true" /><span>{label}</span><small>0{index + 1}</small>
+            </button>)}
+          </div>
+          <select aria-label="Choose office workspace" value={activeTab} onChange={event => setActiveTab(event.target.value)}>
+            {stations.map(({ id, label }) => <option value={id} key={id}>{label}</option>)}
+          </select>
+        </nav>
+        <section className="office-content" aria-label={stations.find(item => item.id === activeTab)?.label}>
       <AnimatePresence mode="wait">
         {activeTab === 'users' && (
           <motion.div key="users" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-            <h3 className="text-xl font-bold text-butter">Manage Students</h3>
-            {loading ? <div className="text-center py-8">Loading...</div> : (
-              users.map(user => (
-                <div key={user.id} className="card flex items-center justify-between p-4">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-bold">{user.name}</p>
-                      {user.role === 'admin' && (
-                        <span className="px-2 py-0.5 bg-forest/10 text-forest text-[11px] font-bold rounded-full uppercase tracking-wider">Admin</span>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-500">@{user.username} • {user.xp} <b>BRAIN GAINS</b></p>
-                  </div>
+            <div className="office-directory-head"><span className="office-eyebrow">01 / People</span>
+              <h2>Account directory</h2><p>Manage roles, achievements and account access.</p>
+            </div>
+            <div className="office-stats">
+              {[["Accounts", users.length], ["Administrators", users.filter(u => u.role === 'admin').length], ["Banned", users.filter(u => u.isBanned).length]].map(([label,count]) =>
+                <div key={label}><strong>{loading ? '—' : count}</strong><span>{label}</span></div>)}
+            </div>
+            <label className="office-search"><Search size={18} aria-hidden="true" /><input aria-label="Search accounts" placeholder="Search by name, username or grade" value={search} onChange={event => setSearch(event.target.value)} /></label>
+            {loading ? <p role="status">Loading accounts…</p> : !matches.length ? <p role="status">{term ? 'No accounts match your search.' : 'No accounts yet.'}</p> : (
+              matches.map(user => (
+                <div key={user.id} className="office-account">
+                  <span className="office-initial" aria-hidden="true">{(user.name || user.username || '?').slice(0,1).toUpperCase()}</span>
+                  <div className="office-identity"><strong>{user.name}</strong><span>@{user.username} · {user.xp || 0} XP</span>
+                    <small>{user.role === 'admin' ? 'Administrator' : 'Student'}{user.isBanned && ' · Banned'}</small></div>
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleToggleAdmin(user.id, user.role || 'student')}
@@ -830,7 +779,7 @@ export default function AdminPanel() {
                       )}
                       title={user.isBanned ? "Unban User" : "Ban User"}
                     >
-                      <Shield size={18} />
+                      <LockKeyhole size={18} />
                     </button>
                     <button
                       onClick={() => setConfirmDelete({ id: user.id, type: 'user' })}
@@ -850,7 +799,7 @@ export default function AdminPanel() {
           <motion.div key="questions" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-2xl font-black text-butter tracking-tight">Quiz Studio</h3>
+                <h3 className="text-2xl font-black text-butter tracking-tight">Question bank</h3>
                 <p className="text-xs text-butter/60 font-medium">Manage your question bank and categories</p>
               </div>
               {questions.length > 0 && (
@@ -873,7 +822,7 @@ export default function AdminPanel() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {Array.from(new Set(questions.map(q => q.subject || 'Uncategorized'))).sort().map(subject => (
-                    <div key={subject} className="group flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-gray-100 shadow-sm hover:border-forest transition-all">
+                    <div key={subject} className="max-w-full [overflow-wrap:anywhere] group flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-gray-100 shadow-sm hover:border-forest transition-all">
                       <span className="font-bold text-xs text-gray-600">{subject}</span>
                       <button
                         onClick={() => setConfirmDelete({ id: subject, type: 'category', subType: 'subject' })}
@@ -894,7 +843,7 @@ export default function AdminPanel() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {Array.from(new Set(questions.map(q => q.chapter).filter(Boolean))).map(chapter => (
-                    <div key={chapter} className="group flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-gray-100 shadow-sm hover:border-forest transition-all">
+                    <div key={chapter} className="max-w-full [overflow-wrap:anywhere] group flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-gray-100 shadow-sm hover:border-forest transition-all">
                       <span className="font-bold text-xs text-gray-600">{chapter}</span>
                       <button
                         onClick={() => setConfirmDelete({ id: chapter, type: 'category', subType: 'chapter' })}
@@ -961,7 +910,7 @@ export default function AdminPanel() {
             </div>
 
             {/* Question List */}
-            <div className="space-y-6">
+            <div className="office-bank space-y-6">
               <div className="flex items-center justify-between px-2">
                 <h3 className="font-black text-forest uppercase tracking-tight">Question Bank</h3>
                 <div className="h-px flex-1 bg-gray-100 mx-4"></div>
@@ -1017,7 +966,7 @@ export default function AdminPanel() {
                               className="card p-5 flex flex-col sm:flex-row justify-between items-start gap-4 hover:border-forest/30 transition-all group"
                             >
                               <div className="flex-1 w-full">
-                                <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                                <div className="bank-path flex flex-wrap items-center gap-2 text-[11px] font-bold text-slate-600 uppercase tracking-widest mb-1">
                                   <span className="text-forest">Book: {q.subject}</span>
                                   <span>•</span>
                                   <span>Chapter: {q.chapter}</span>
@@ -1029,7 +978,7 @@ export default function AdminPanel() {
                                       "text-[11px] px-3 py-2 rounded-xl border flex items-center justify-between",
                                       idx === q.correctIndex ? "bg-green-50 border-green-200 text-green-700 font-bold" : "bg-gray-50/50 border-gray-100 text-gray-500"
                                     )}>
-                                      <span className="truncate">{opt}</span>
+                                      <span>{opt}</span>
                                       {idx === q.correctIndex && <CheckCircle size={10} />}
                                     </div>
                                   ))}
@@ -1076,16 +1025,16 @@ export default function AdminPanel() {
         )}
 
         {activeTab === 'books' && (
-          <motion.div key="books" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="max-w-2xl mx-auto">
+          <motion.div key="books" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="office-generator">
             <div className="card overflow-hidden border-2 border-forest/5 shadow-2xl shadow-forest/5">
-              <div className="bg-forest p-8 text-white relative overflow-hidden">
+              <div className="glass-inset-dark p-8 text-white relative overflow-hidden">
                 <div className="relative z-10 space-y-2">
                   <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
                     <Sparkles size={24} className="text-yellow-300" />
                   </div>
                   <h3 className="text-2xl font-black tracking-tight">AI Quiz Generator</h3>
                   <p className="text-sm text-white/70 font-medium max-w-md">
-                    Upload a photo of a book page or document, and our AI will instantly craft 100 high-quality multiple-choice questions.
+                    Upload a book page or document, then review the generated questions before adding them to the bank.
                   </p>
                 </div>
                 <div className="absolute -right-12 -top-12 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
@@ -1094,7 +1043,7 @@ export default function AdminPanel() {
                 </div>
               </div>
 
-              <form onSubmit={handleGenerateAIQuiz} className="p-8 space-y-6 bg-white">
+              <form onSubmit={handleGenerateAIQuiz} className="glass-inset p-8 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Book Name</label>
@@ -1189,12 +1138,12 @@ export default function AdminPanel() {
         {activeTab === 'database' && (
           <motion.div key="database" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="card space-y-4">
+              <div className="card office-form space-y-4">
                 <h3 className="font-bold text-forest flex items-center gap-2">
                   <Sparkles size={20} className="text-yellow-500" />
-                  AI Student Importer
+                  Import student IDs
                 </h3>
-                <p className="text-xs text-gray-500">Upload a PDF or image containing student ID cards. AI will automatically extract and authorize them.</p>
+                <p className="text-xs text-gray-500">Upload student ID cards as an image or PDF, then review the details before adding students.</p>
                 
                 <form onSubmit={handleGenerateAIStudents} className="space-y-4">
                   <div className="relative">
@@ -1236,12 +1185,12 @@ export default function AdminPanel() {
                 </form>
               </div>
 
-              <div className="card space-y-4">
+              <div className="card office-form space-y-4">
                 <h3 className="font-bold text-forest flex items-center gap-2">
                   <Users size={20} className="text-forest" />
-                  Manual Student Entry
+                  Enroll a student
                 </h3>
-                <p className="text-xs text-gray-500">Manually authorize a student by entering their details below.</p>
+                <p className="text-xs text-gray-500">Enter the details the student will use to sign in.</p>
                 
                 <form onSubmit={async (e) => {
                   e.preventDefault();
@@ -1271,28 +1220,28 @@ export default function AdminPanel() {
                     handleWriteError(err, 'Manual student entry');
                   }
                 }} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="office-field-pair grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Student ID *</label>
-                      <input name="studentId" required className="input-field py-3" placeholder="e.g. 25-18-917" />
+                      <label htmlFor="enroll-studentId" className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Student ID *</label>
+                      <input id="enroll-studentId" name="studentId" required className="input-field py-3" placeholder="e.g. 25-18-917" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Phone Number *</label>
-                      <input name="phone" required className="input-field py-3" placeholder="e.g. 1234567890" />
+                      <label htmlFor="enroll-phone" className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Phone Number *</label>
+                      <input id="enroll-phone" name="phone" required className="input-field py-3" placeholder="e.g. 1234567890" />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Full Name *</label>
-                    <input name="name" required className="input-field py-3" placeholder="e.g. John Doe" />
+                    <label htmlFor="enroll-name" className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Full Name *</label>
+                    <input id="enroll-name" name="name" required className="input-field py-3" placeholder="e.g. John Doe" />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="office-field-pair grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Roll Number</label>
-                      <input name="roll" className="input-field py-3" placeholder="e.g. 42" />
+                      <label htmlFor="enroll-roll" className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Roll Number</label>
+                      <input id="enroll-roll" name="roll" className="input-field py-3" placeholder="e.g. 42" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Grade/Class</label>
-                      <input name="grade" className="input-field py-3" placeholder="e.g. 10th Grade" />
+                      <label htmlFor="enroll-grade" className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Grade/Class</label>
+                      <input id="enroll-grade" name="grade" className="input-field py-3" placeholder="e.g. 10th Grade" />
                     </div>
                   </div>
                   <button type="submit" className="btn-primary w-full flex items-center justify-center gap-2 mt-2">
@@ -1325,29 +1274,30 @@ export default function AdminPanel() {
 
         {activeTab === 'calendar' && (
           <motion.div key="calendar" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-            <div className="card space-y-4">
+            <div className="card calendar-import space-y-4">
               <h3 className="font-bold text-forest flex items-center gap-2">
-                <Sparkles size={20} className="text-yellow-500" />
-                AI Calendar Importer
+                <Sparkles size={20} className="text-forest" />
+                Import a school calendar
               </h3>
-              <p className="text-xs text-gray-500">Upload a photo of your school calendar. AI will extract school events (sports, tests, etc.) while filtering out religious and principal meetings.</p>
+              <p id="calendar-import-help">Upload an image or PDF. AI adds school events such as tests and sports days, and skips religious holidays and staff meetings.</p>
               
               <form onSubmit={handleGenerateAICalendar} className="space-y-4">
                 <div className="relative">
                   <input
                     type="file"
                     accept="image/*,application/pdf"
-                    className="hidden"
+                    className="sr-only"
+                    aria-describedby="calendar-import-help"
                     id="calendar-upload"
                     onChange={(e) => setCalendarFile(e.target.files?.[0] || null)}
                   />
                   <label
                     htmlFor="calendar-upload"
-                    className="w-full flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-200 rounded-2xl hover:border-forest hover:bg-forest/5 transition-all cursor-pointer"
+                    className="calendar-import__file"
                   >
-                    <Upload className="text-gray-400 mb-2" size={32} />
-                    <span className="text-sm font-bold text-gray-600">
-                      {calendarFile ? calendarFile.name : 'Choose Calendar Image/PDF'}
+                    <Upload aria-hidden="true" size={26} />
+                    <span className="font-bold">
+                      {calendarFile ? calendarFile.name : 'Choose an image or PDF'}
                     </span>
                   </label>
                 </div>
@@ -1360,12 +1310,12 @@ export default function AdminPanel() {
                   {aiLoading ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-white"></div>
-                      Extracting Events...
+                      Importing events…
                     </>
                   ) : (
                     <>
                       <Sparkles size={18} />
-                      Extract & Add Events
+                      Import events
                     </>
                   )}
                 </button>
@@ -1374,6 +1324,8 @@ export default function AdminPanel() {
           </motion.div>
         )}
       </AnimatePresence>
+        </section>
+      </div>
     </div>
   );
 }

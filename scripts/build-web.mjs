@@ -2,7 +2,11 @@ import { build } from 'esbuild';
 import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 
 const output = 'web-app';
-await rm(output, { recursive: true, force: true });
+// Only clean generated code. A locally run distribution may already contain
+// live SQLite data and a configured .env alongside these files.
+for (const generated of ['dist', 'server']) {
+  await rm(`${output}/${generated}`, { recursive: true, force: true });
+}
 await mkdir(`${output}/server`, { recursive: true });
 await mkdir(`${output}/data`, { recursive: true });
 await cp('dist', `${output}/dist`, { recursive: true });

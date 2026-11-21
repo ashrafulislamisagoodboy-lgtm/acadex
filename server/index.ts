@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
-import type { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction, CookieOptions } from 'express';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { existsSync } from 'node:fs';
@@ -9,18 +9,29 @@ import { LocalStore, ApiError } from './store.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const cookieName = 'acadex_session';
-const sessionToken = (req: Request) => req.headers.cookie?.split(';').map(part => part.trim()).find(part => part.startsWith(`${cookieName}=`))?.slice(cookieName.length + 1);
+const cookieSession = (req: Request) => req.headers.cookie?.split(';').map(part => part.trim()).find(part => part.startsWith(`${cookieName}=`))?.slice(cookieName.length + 1);
 
-export function createApp({ databasePath = resolve(root, 'data/acadex.sqlite') } = {}) {
-  const store = new LocalStore(databasePath);
+export function createApp({ databasePath = resolve(root, 'data/acadex.sqlite'), previewOrigin = process.env.ACADEX_PREVIEW_ORIGIN } = {}) {
+  const store = new LocalStore(databasePath, previewOrigin ? 60 * 60_000 : undefined);
   const app = express();
-  const secureCookies = process.env.SECURE_COOKIES === 'true';
+  // An embedded preview is behind an HTTPS proxy whose internal Host may differ.
+  if (previewOrigin && (!previewOrigin.startsWith('https://') || new URL(previewOrigin).origin !== previewOrigin)) {
+    throw new Error('ACADEX_PREVIEW_ORIGIN must be an exact HTTPS origin.');
+  }
+  const cookieOptions: CookieOptions = {
+    httpOnly: true, path: '/',
+    secure: Boolean(previewOrigin) || process.env.SECURE_COOKIES === 'true',
+    sameSite: previewOrigin ? 'none' : 'strict', partitioned: Boolean(previewOrigin),
+  };
+  const probeName = 'acadex_cookie_probe';
+  const embedded = (req: Request) => Boolean(previewOrigin && req.get('X-Acadex-Embedded') === '1');
+  const sessionToken = (req: Request) => (embedded(req) && req.get('X-Acadex-Preview-Session')) || cookieSession(req);
   app.disable('x-powered-by');
   if (process.env.TRUST_PROXY === 'true') app.set('trust proxy', 1);
   app.use('/api', (req, res, next) => {
     res.setHeader('Cache-Control', 'no-store');
     // Requests from a different website must not modify the local database.
-    if (req.headers.origin && req.headers.origin !== `${req.protocol}://${req.get('host')}`) {
+    if (req.headers.origin && req.headers.origin !== (previewOrigin || `${req.protocol}://${req.get('host')}`)) {
       res.status(403).json({ error: 'Use Acadex from its own web address.' }); return;
     }
     next();
@@ -33,10 +44,20 @@ export function createApp({ databasePath = resolve(root, 'data/acadex.sqlite') }
     next();
   };
   const setSession = (res: Response, result: ReturnType<LocalStore['createSession']>) => {
-    res.cookie(cookieName, result.token, { httpOnly: true, sameSite: 'strict', secure: secureCookies, maxAge: 7 * 86400000, path: '/' });
+    const req = res.req;
+    if (embedded(req) && req.headers.origin === previewOrigin &&
+        (req.get('X-Acadex-Preview-Session') || !req.headers.cookie?.split(';').some(pair => pair.trim() === `${probeName}=1`))) {
+      // Only this preview issues a tab credential, after normal authentication.
+      res.json({ user: result.user, previewSession: result.token });
+      return;
+    }
+    res.cookie(cookieName, result.token, { ...cookieOptions, maxAge: 7 * 86400000 });
     res.json({ user: result.user });
   };
-  app.get('/api/status', (_req, res) => res.json({ needsSetup: store.needsSetup(), storage: 'sqlite' }));
+  app.get('/api/status', (req, res) => {
+    if (embedded(req)) res.cookie(probeName, '1', { ...cookieOptions, maxAge: 10 * 60_000 });
+    res.json({ needsSetup: store.needsSetup(), storage: 'sqlite' });
+  });
   app.get('/api/auth/me', (req, res) => {
     const user = store.currentUser(sessionToken(req));
     res.json({ user: user ? store.userInfo(user) : null });
@@ -59,7 +80,7 @@ export function createApp({ databasePath = resolve(root, 'data/acadex.sqlite') }
   });
   app.post('/api/auth/logout', (req, res) => {
     store.logout(sessionToken(req));
-    res.clearCookie(cookieName, { httpOnly: true, sameSite: 'strict', secure: secureCookies, path: '/' });
+    res.clearCookie(cookieName, cookieOptions);
     res.json({ ok: true });
   });
   app.post('/api/data/read', protect, (req, res) => res.json(store.read(res.locals.user, req.body)));

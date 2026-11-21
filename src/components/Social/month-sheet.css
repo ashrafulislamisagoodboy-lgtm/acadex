@@ -1,0 +1,32 @@
+.month-sheet { background:#f5f9f4f5; color:#203e41; border:1px solid #fff; border-radius:20px; padding:clamp(.75rem,2.5vw,2rem); box-shadow:0 12px 32px -20px #173331; }
+.month-sheet header,.sheet-arrows,.sheet-legend,.year-return { display:flex; align-items:center; gap:.5rem; }.month-sheet header { justify-content:space-between; flex-wrap:wrap; }.month-sheet h2 { font-size:clamp(1.6rem,4vw,2.8rem); line-height:1.15; scroll-margin-top:6rem; }.year-return { font-size:.85rem; font-weight:650; min-height:44px; }.sheet-arrows button { display:grid; place-items:center; width:44px; height:44px; border:1px solid #8baaa1; border-radius:50%; }.sheet-legend { font-size:.8rem; margin:1rem 0; }.sheet-legend i,.sheet-mark { width:7px; height:7px; border-radius:50%; background:#a4531b; }
+.sheet-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:clamp(2px,.6vw,7px); }.sheet-weekday { text-align:center; font:650 .74rem var(--mono); }.sheet-day { position:relative; display:flex; flex-direction:column; align-items:flex-start; min-width:0; min-height:clamp(44px,7vw,82px); padding:clamp(.2rem,1vw,.75rem); border:1px solid #c0d0c7; border-radius:9px; background:#ffffffc4; }.sheet-day[data-event='true'] { background:#f9e2b7; border-color:#b17538; color:#573307; }.sheet-day[aria-current='date'] b { text-decoration:underline double; }.sheet-day[aria-pressed='true'] { outline:2px solid #245c57; outline-offset:-2px; }.sheet-day small { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.76rem; }.sheet-mark { position:absolute; top:8px; right:6px; }.month-sheet button:focus-visible { outline:3px solid #295d8f; outline-offset:1px; }.sheet-detail { margin-top:1rem; padding:1rem; border-radius:12px; background:#e2ebe2; overflow-wrap:anywhere; }.sheet-detail h3 { font-weight:750; }.sheet-detail li { margin-top:.55rem; }.sheet-detail li span { display:block; font-size:.85rem; }
+@media(max-width:600px) { .sheet-day { align-items:center; justify-content:center; }.sheet-day small { display:none; }.sheet-mark { position:static; width:5px; height:5px; }.sheet-weekday { font-size:.65rem; }.sheet-grid { margin-top:.5rem; } }
+/* Leave a tappable gutter on every side, including short phone screens. */
+.month-overlay { position:fixed; inset:0; margin:0; width:100%; max-width:none; height:100%; max-height:none; border:0; padding:clamp(12px,3vw,32px); background:transparent; }
+.month-overlay[open] { display:grid; place-items:center; grid-template: minmax(0,1fr) / minmax(0,1fr); overflow:clip; height:100dvh; }
+.month-overlay::backdrop { background:rgb(15 34 39 / .44); }
+.month-overlay .month-sheet {
+  width:min(100%,850px); height:min(100%,710px); min-height:0; display:grid;
+  grid-template-rows:auto auto minmax(0,1fr) auto;
+  background:#eff6f2; border-color:#fff; box-shadow:inset 0 1px 0 white, inset 0 -1px 0 #acdacc, 0 18px 60px #17333144;
+}
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))) {
+  .month-overlay .month-sheet { background:linear-gradient(135deg,#ffffffbb,transparent 52%),rgb(228 242 237 / .79); backdrop-filter:blur(12px) saturate(112%); -webkit-backdrop-filter:blur(12px) saturate(112%); }
+}
+@media(prefers-reduced-transparency:reduce), (prefers-contrast:more) {
+  .month-overlay .month-sheet { background:#eff6f2; backdrop-filter:none; -webkit-backdrop-filter:none; }
+}
+.month-sheet .sheet-grid { min-height:0; grid-template-rows:auto; grid-auto-rows:minmax(0,1fr); }
+.month-sheet .sheet-day { min-height:0; padding:clamp(2px,1vh,10px); box-shadow:inset 0 1px 0 #fff9; }
+.sheet-detail { margin-top:.6rem; padding:.55rem .8rem; background:#f2f8f1df; }
+.sheet-detail >strong { display:block; }.sheet-detail >p { font-size:.85rem; }
+.event-pager { display:flex; align-items:center; gap:.7rem; font-size:.8rem; }.event-pager button { display:grid; place-items:center; min-width:32px; min-height:32px; }.event-pager button:disabled { opacity:.4; }
+@media(max-height:650px) {
+  .month-overlay { padding:10px; }.month-overlay .month-sheet { padding:.65rem; }.month-sheet h2 { font-size:1.3rem; }.year-return,.sheet-arrows button { min-height:32px; height:32px; }.sheet-legend { margin:.3rem 0; }.month-sheet .sheet-day small { display:none; }
+}
+@media(max-height:520px) and (min-aspect-ratio:6/5) {
+  .month-overlay .month-sheet { grid-template-columns:minmax(0,1fr) minmax(0,2.1fr); grid-template-rows:auto auto 1fr; gap:0 .9rem; }
+  .month-sheet header { align-content:start; }.month-sheet .sheet-grid { grid-column:2; grid-row:1 / 4; }.sheet-detail { align-self:start; }.sheet-detail h3,.sheet-detail strong { font-size:.85rem; }
+}
+html:has(.month-overlay[open]) { overflow:hidden; }

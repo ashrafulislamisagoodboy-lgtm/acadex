@@ -1,170 +1,67 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  ArrowUpRight,
-  BookOpen,
-  CalendarDays,
-  ChevronRight,
-  Flame,
-  Medal,
-  Settings,
-  Sparkles,
-  Trophy,
-} from 'lucide-react';
-import { motion, useReducedMotion } from 'motion/react';
-import { auth, db, doc, getDoc } from '../../lib/local';
+import { ArrowRight, ArrowUpRight, CalendarDays, Crown, Fingerprint, Settings, Radio, AudioLines } from 'lucide-react';
+import { auth, db, doc, onSnapshot } from '../../lib/local';
+import FieldAtlas from '../Common/FieldAtlas';
+import DailySpark from './DailySpark';
+import FocusPass from './FocusPass';
+import './studio.css';
 
-const numberFormatter = new Intl.NumberFormat('en-US');
+type RecordData = { name?: string; xp?: number; totalQuizzesPlayed?: number; totalQuestionsAttended?: number; role?: string };
+const stops = [
+  {path:'/leaderboard', title:'The podium', note:'See where you stand', icon:Crown},
+  {path:'/social', title:'Calendar', note:'Plan your school week', icon:CalendarDays},
+  {path:'/admin', title:'School office', note:'Manage school records', icon:Settings},
+];
+
+function StudyNote({ uid }: { uid: string }) {
+  const day = new Date();
+  const key = `acadex.desk-note.${uid}.${day.getFullYear()}-${day.getMonth()+1}-${day.getDate()}`;
+  const [note, setNote] = useState(() => { try { return localStorage.getItem(key) || ''; } catch { return ''; } });
+  return <label className="station-note"><span>Today I’m working on</span>
+    <input value={note} maxLength={100} placeholder="A chapter, a question, an idea…" onChange={e => {
+      setNote(e.target.value); try { localStorage.setItem(key,e.target.value); } catch { /* Keep the draft in memory. */ }
+    }}/></label>;
+}
 
 export default function Home() {
-  const [userData, setUserData] = useState<any>(null);
-  const reduceMotion = useReducedMotion();
-
+  const [profile, setProfile] = useState<RecordData | null>(null);
+  const [error, setError] = useState('');
+  const uid = auth.currentUser?.uid;
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (!auth.currentUser) return;
-      const snapshot = await getDoc(doc(db, 'users', auth.currentUser.uid));
-      if (snapshot.exists()) setUserData(snapshot.data());
-    };
-    void fetchUserData();
-  }, []);
-
-  const xp = Number(userData?.xp || 0);
-  const level = Math.floor(xp / 100) + 1;
-  const levelProgress = xp % 100;
-  const achievements = userData?.achievements?.length || 0;
-  const displayName = userData?.name || auth.currentUser?.displayName || 'Learner';
-  const firstName = displayName.trim().split(/\s+/)[0];
-  const today = new Intl.DateTimeFormat('en', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  }).format(new Date());
-
-  const entrance = reduceMotion ? {} : { opacity: [0, 1], y: [14, 0] };
-
-  return (
-    <div className="page-shell home-page">
-      <motion.section
-        className="home-hero glass-card"
-        initial={reduceMotion ? false : { opacity: 0, y: 14 }}
-        animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-        transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <div className="home-hero__copy">
-          <p className="context-line">{today}</p>
-          <h1>Make one idea stick today, {firstName}.</h1>
-          <p className="home-hero__intro">
-            A short quiz keeps your momentum moving and brings the next level closer.
-          </p>
-          <div className="home-hero__actions">
-            <Link to="/quiz" className="btn-primary btn-lg">
-              <Sparkles size={19} aria-hidden="true" />
-              Start a quiz
-            </Link>
-            <Link to="/leaderboard" className="btn-quiet">
-              View the league
-              <ArrowUpRight size={18} aria-hidden="true" />
-            </Link>
-          </div>
-        </div>
-
-        <div className="progress-orbit" aria-label={`Level ${level}, ${levelProgress}% complete`} role="img">
-          <div className="progress-orbit__ring" style={{ '--progress': `${levelProgress * 3.6}deg` } as CSSProperties}>
-            <div className="progress-orbit__core">
-              <span>Level</span>
-              <strong>{level}</strong>
-              <small>{100 - levelProgress} XP to go</small>
-            </div>
-          </div>
-          <div className="progress-orbit__note">
-            <Flame size={18} aria-hidden="true" />
-            <span>Keep the learning streak alive</span>
-          </div>
-        </div>
-      </motion.section>
-
-      <motion.section
-        className="learning-ribbon"
-        aria-label="Learning summary"
-        initial={reduceMotion ? false : { opacity: 0 }}
-        animate={reduceMotion ? undefined : { opacity: 1 }}
-        transition={{ delay: 0.12, duration: 0.4 }}
-      >
-        <div>
-          <Trophy size={20} aria-hidden="true" />
-          <span><strong>{numberFormatter.format(xp)}</strong> total XP</span>
-        </div>
-        <div>
-          <Medal size={20} aria-hidden="true" />
-          <span><strong>{achievements}</strong> achievements</span>
-        </div>
-        <div className="learning-ribbon__track">
-          <span>Level progress</span>
-          <div role="progressbar" aria-label="Progress to next level" aria-valuemin={0} aria-valuemax={100} aria-valuenow={levelProgress}>
-            <i style={{ width: `${levelProgress}%` }} />
-          </div>
-          <strong>{levelProgress}%</strong>
-        </div>
-      </motion.section>
-
-      <section className="home-section">
-        <div className="section-heading">
-          <div>
-            <h2>Choose your next move</h2>
-            <p>Everything you need for today, in one place.</p>
-          </div>
-        </div>
-
-        <div className="action-grid">
-          <motion.div animate={entrance} transition={{ delay: 0.08 }}>
-            <Link to="/quiz" className="action-card action-card--feature glass-card">
-              <div className="action-card__icon"><BookOpen size={25} aria-hidden="true" /></div>
-              <span className="action-card__index">01</span>
-              <div className="action-card__copy">
-                <h3>Practice room</h3>
-                <p>Pick a book and turn recall into points.</p>
-              </div>
-              <span className="action-card__link">Open quiz <ChevronRight size={18} aria-hidden="true" /></span>
-            </Link>
-          </motion.div>
-
-          <motion.div animate={entrance} transition={{ delay: 0.14 }}>
-            <Link to="/leaderboard" className="action-card action-card--dark glass-card-dark">
-              <div className="action-card__icon"><Trophy size={24} aria-hidden="true" /></div>
-              <div className="action-card__copy">
-                <h3>Learning league</h3>
-                <p>See who is climbing and find your place.</p>
-              </div>
-              <span className="action-card__link">View ranks <ChevronRight size={18} aria-hidden="true" /></span>
-            </Link>
-          </motion.div>
-
-          <motion.div animate={entrance} transition={{ delay: 0.2 }}>
-            <Link to="/social" className="action-card action-card--mint">
-              <div className="action-card__icon"><CalendarDays size={24} aria-hidden="true" /></div>
-              <div className="action-card__copy">
-                <h3>School calendar</h3>
-                <p>Plan around events, deadlines, and study days.</p>
-              </div>
-              <span className="action-card__link">Open calendar <ChevronRight size={18} aria-hidden="true" /></span>
-            </Link>
-          </motion.div>
-
-          {userData?.role === 'admin' && (
-            <motion.div animate={entrance} transition={{ delay: 0.26 }}>
-              <Link to="/admin" className="action-card action-card--admin glass-card-dark">
-                <div className="action-card__icon"><Settings size={24} aria-hidden="true" /></div>
-                <div className="action-card__copy">
-                  <h3>Admin studio</h3>
-                  <p>Manage learners, questions, books, and platform records.</p>
-                </div>
-                <span className="action-card__link">Manage Acadex <ChevronRight size={18} aria-hidden="true" /></span>
-              </Link>
-            </motion.div>
-          )}
-        </div>
+    if (!uid) return;
+    return onSnapshot(doc(db, 'users', uid), snap => { setProfile(snap.data()); setError(''); }, e => setError(e.message));
+  }, [uid]);
+  const xp = profile?.xp ?? 0, level = Math.floor(xp/100)+1;
+  const today = new Date();
+  const name = (profile?.name || auth.currentUser?.displayName || 'learner').trim().split(/\s+/)[0];
+  const [preset, tune] = useState(0);
+  const presets = ['Practice', 'Warm-up', 'Focus'];
+  return <div className="desk station">
+    <section className="receiver" aria-labelledby="station-title">
+      <header className="receiver-strip"><span><Radio size={17}/> Acadex FM</span><time>{today.toLocaleDateString('en',{weekday:'short',month:'short',day:'numeric'})}</time></header>
+      <div className="receiver-face">
+        <div className="radio-intro"><h1 id="station-title">Study radio<span>.</span></h1><p>Hi, {name}. What are you tuning into today?</p></div>
+        <div className="frequency" aria-hidden="true"><div className="frequency-label"><span>Channel</span><b>0{preset+1}</b><span>{presets[preset]}</span></div><div className="scale"><i style={{left:`${12+preset*38}%`}}/></div></div>
+      </div>
+      <div className="receiver-controls" role="group" aria-label="Study presets">{presets.map((label,i)=><button key={label} aria-pressed={preset===i} aria-controls="station-session" onClick={()=>tune(i)}><small>0{i+1}</small>{label}</button>)}<span className="speaker" aria-hidden="true"/></div>
+    </section>
+    <div className="station-body"><section className="session-pane" id="station-session" aria-label={`${presets[preset]} session`}>
+      <div hidden={preset!==0}><p className="station-caption"><AudioLines size={16}/> Channel 01</p><h2>Practice by chapter</h2><p>Choose a book and chapter from the quiz library.</p>
+        {uid && <StudyNote key={`${uid}-${today.toDateString()}`} uid={uid} />}<Link className="station-cta" to="/quiz">Start a quiz <ArrowRight size={17}/></Link>
+      </div>
+      <div hidden={preset!==1}><DailySpark key={today.toDateString()} day={today.getDay()}/></div>
+      <div hidden={preset!==2}>{uid && <FocusPass key={uid} uid={uid}/>}</div>
+    </section>
+      <section className="momentum"><h2>Practice record</h2>
+        {error ? <p role="alert">{error}</p> : !profile ? <p role="status">Reading your record…</p> : <><div className="momentum-track"><label htmlFor="studio-xp">Level {level}</label><span>{100 - xp%100} XP to level {level+1}</span></div>
+          <progress id="studio-xp" max={100} value={xp%100}/>
+          <dl>{[['Total XP',xp],['Quizzes finished',profile.totalQuizzesPlayed || 0],['Questions tried',profile.totalQuestionsAttended || 0]].map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value.toLocaleString()}</dd></div>)}</dl></>}
+        {uid && <Link className="passport-jump" to={`/profile/${uid}`}><Fingerprint size={17}/> Open my learner passport <ArrowUpRight size={16}/></Link>}
       </section>
     </div>
-  );
+    <div className="station-lower"><section className="studio-links"><h2>Elsewhere on campus</h2>
+      {stops.filter(stop=>stop.path!=='/admin'||profile?.role==='admin').map(({path,title,note,icon:Icon})=><Link key={path} to={path}><Icon size={21}/><span><strong>{title}</strong><small>{note}</small></span><ArrowUpRight size={17}/></Link>)}
+    </section><div className="studio-atlas"><FieldAtlas/></div></div>
+  </div>;
 }

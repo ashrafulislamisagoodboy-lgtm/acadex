@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { auth, db, collection, getDocs, getDoc, doc, startLocalQuiz, answerLocalQuiz } from '../../lib/local';
-import { Trophy, Star, CheckCircle, XCircle, AlertCircle, Timer, Book, ChevronRight, Shield, PartyPopper } from 'lucide-react';
+import { Trophy, Star, CheckCircle, XCircle, AlertCircle, Timer, Book, ChevronRight, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../lib/utils';
+
+function countLabel(count: number, noun: string) {
+  return `${count} ${noun}${count === 1 ? '' : 's'}`;
+}
 
 export default function QuizGame() {
   const [allQuestions, setAllQuestions] = useState<any[]>([]);
@@ -15,7 +19,6 @@ export default function QuizGame() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [gameOver, setGameOver] = useState(false);
-  const isSubmitting = false;
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [pending, setPending] = useState(false);
   const [consecutiveWrong, setConsecutiveWrong] = useState(0);
@@ -25,30 +28,37 @@ export default function QuizGame() {
   const [totalQuestionsAttended, setTotalQuestionsAttended] = useState(0);
   const [showXpAnimation, setShowXpAnimation] = useState(false);
   const [animValue, setAnimValue] = useState(0);
-  const [isMilestone, setIsMilestone] = useState(false);
   const [quizResults, setQuizResults] = useState<boolean[]>([]);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [quizId, setQuizId] = useState('');
+  const [libraryVersion, setLibraryVersion] = useState(0);
+  const [libraryError, setLibraryError] = useState(false);
+  const mounted = useRef(false);
   const answerLock = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     let active = true;
+    mounted.current = true;
+    setLoading(true); setLibraryError(false); setNotification(null);
     Promise.all([getDocs(collection(db, 'questions')), getDoc(doc(db, 'users', auth.currentUser!.uid))])
       .then(([snapshot, user]) => {
         if (!active) return;
         const data = user.data();
         const admin = data?.role === 'admin';
         setIsAdmin(admin); setUserTotalXp(data?.xp || 0); setTotalQuestionsAttended(data?.totalQuestionsAttended || 0);
-        const items = snapshot.docs.map((row: any) => ({ id: row.id, ...row.data() }));
+        const items = snapshot.docs.map((row: any) => {
+          const question = row.data();
+          return { ...question, id: row.id, subject: (question.subject || 'Uncategorized').trim(), chapter: (question.chapter || 'Default').trim() };
+        });
         setAllQuestions(items);
-        setSubjects(Array.from(new Set<string>(items.map((q: any) => (q.subject || 'Uncategorized').trim()))).filter(subject => admin || subject !== 'Uncategorized').sort());
-      }).catch(error => { if (active) setNotification({ message: error.message, type: 'error' }); })
+        setSubjects(Array.from(new Set<string>(items.map((q: any) => q.subject))).filter(subject => admin || subject !== 'Uncategorized').sort());
+      }).catch(error => { if (active) { setLibraryError(true); setNotification({ message: error.message, type: 'error' }); } })
       .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; clearTimeout(timer.current); };
-  }, []);
+    return () => { active = false; mounted.current = false; clearTimeout(timer.current); };
+  }, [libraryVersion]);
   useEffect(() => {
-    setChapters(selectedSubject ? Array.from(new Set<string>(allQuestions.filter(q => (q.subject || 'Uncategorized').trim() === selectedSubject).map(q => (q.chapter || 'Default').trim()))).sort() : []);
+    setChapters(selectedSubject ? Array.from(new Set<string>(allQuestions.filter(q => q.subject === selectedSubject).map(q => q.chapter))).sort() : []);
   }, [selectedSubject, allQuestions]);
 
   const startQuiz = async (chapterOverride?: string) => {
@@ -61,7 +71,7 @@ export default function QuizGame() {
       setCurrentIndex(0); setGameOver(false); setSelectedOption(null); setConsecutiveWrong(0);
       setXpGained(0); setXpLost(0); setQuizResults([]); setShowXpAnimation(false);
       answerLock.current = false; setPending(false);
-    } catch (error) { setSelectedChapter(null); setNotification({ message: (error as Error).message, type: 'error' }); }
+    } catch (error) { setNotification({ message: (error as Error).message, type: 'error' }); }
     finally { setLoading(false); }
   };
 
@@ -70,11 +80,12 @@ export default function QuizGame() {
     answerLock.current = true; setPending(true); setNotification(null);
     try {
       const result = await answerLocalQuiz(quizId, currentIndex, optionIndex);
+      if (!mounted.current) return;
       setQuestions(previous => previous.map((question, index) => index === currentIndex ? { ...question, correctIndex: result.correctIndex } : question));
       setSelectedOption(optionIndex); setQuizResults(previous => [...previous, result.correct]);
       setUserTotalXp(result.xp); setTotalQuestionsAttended(result.totalQuestionsAttended);
       setXpGained(result.score); setXpLost(result.xpLost); setConsecutiveWrong(result.consecutiveWrong);
-      if (result.milestone) { setAnimValue(result.milestonePoints); setIsMilestone(true); setShowXpAnimation(true); }
+      if (result.milestone) { setAnimValue(result.milestonePoints); setShowXpAnimation(true); }
       setPending(false);
       timer.current = setTimeout(() => {
         if (result.completed) { setGameOver(true); }
@@ -98,32 +109,19 @@ export default function QuizGame() {
     return (
       <div className="p-6 space-y-8 max-w-4xl mx-auto">
         {notification && <p role="alert" className="text-red-400">{notification.message}</p>}
-        <div className="text-center space-y-4 py-8">
-          <motion.div 
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="w-20 h-20 bg-butter rounded-[2rem] flex items-center justify-center mx-auto text-forest shadow-inner"
-          >
-            <Trophy size={40} />
-          </motion.div>
-          <div className="space-y-1">
-            <h2 className="text-4xl font-black text-butter tracking-tighter uppercase italic">
-              {selectedSubject ? selectedSubject : "Select Book"}
-            </h2>
-            <p className="text-butter/40 font-bold text-sm tracking-widest uppercase opacity-60">
-              {selectedSubject ? "Choose a chapter to begin your quest" : "Pick a book to master"}
-            </p>
-          </div>
-        </div>
+        <header className="chapter-heading"><span className="folio-kicker">Practice / Library</span>
+          <h1>{selectedSubject || 'Practice library'}</h1>
+          <p>{selectedSubject ? 'Select a chapter to start a round.' : 'Select a book, then a chapter.'}</p>
+        </header>
 
-        {subjects.length === 0 ? (
+        {libraryError ? <button type="button" className="btn-primary" onClick={() => setLibraryVersion(n => n + 1)}>Retry library</button> : subjects.length === 0 ? (
           <div className="p-12 text-center space-y-6 card bg-butter border-2 border-dashed border-forest/10">
             <div className="w-24 h-24 bg-forest/5 rounded-full flex items-center justify-center mx-auto">
               <AlertCircle className="text-forest/20" size={48} />
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-black text-forest">The Library is Empty</h2>
-              <p className="text-forest/60 max-w-xs mx-auto font-medium">The grandmasters haven't prepared any books yet. Check back soon!</p>
+              <h2 className="text-2xl font-black text-forest">No books on the shelf yet</h2>
+              <p className="text-forest/60 max-w-xs mx-auto font-medium">{isAdmin ? 'Add questions under Admin → Books to open the first chapter.' : 'Your administrator hasn’t added questions yet.'}</p>
             </div>
           </div>
         ) : (
@@ -144,10 +142,10 @@ export default function QuizGame() {
                     <div className="w-20 h-20 bg-forest/5 rounded-3xl flex items-center justify-center text-forest group-hover:bg-forest group-hover:text-butter transition-all shadow-inner">
                       <Book size={40} strokeWidth={2.5} />
                     </div>
-                    <div className="text-center space-y-1">
+                    <div className="max-w-full text-center space-y-1">
                       <h3 className="text-xl font-black text-forest group-hover:text-forest transition-all uppercase tracking-tight">{subject}</h3>
-                      <p className="text-[11px] font-black text-forest/40 uppercase tracking-widest">
-                        {allQuestions.filter(q => (q.subject || 'Uncategorized') === subject).length} Questions Available
+                      <p className="text-[11px] font-black text-slate-700 uppercase tracking-widest">
+                        {countLabel(allQuestions.filter(q => q.subject === subject).length, 'Question')} available
                       </p>
                     </div>
                   </motion.button>
@@ -172,13 +170,9 @@ export default function QuizGame() {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: idx * 0.05 }}
-                      whileHover={{ x: 10 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => {
-                        setSelectedChapter(chapter);
-                        startQuiz(chapter);
-                      }}
-                      className="card p-6 flex items-center justify-between hover:border-forest transition-all group bg-butter border-2 border-forest/10 shadow-lg shadow-black/10"
+                      onClick={() => void startQuiz(chapter)}
+                      className="chapter-choice card p-6 flex items-center justify-between hover:border-forest transition-all group bg-butter border-2 border-forest/10 shadow-lg shadow-black/10"
                     >
                       <div className="flex items-center gap-5">
                         <div className="w-14 h-14 bg-forest/5 rounded-2xl flex items-center justify-center text-forest group-hover:bg-forest group-hover:text-butter transition-all shadow-inner">
@@ -186,8 +180,8 @@ export default function QuizGame() {
                         </div>
                         <div className="text-left">
                           <h3 className="text-lg font-black text-forest group-hover:text-forest transition-all tracking-tight">{chapter}</h3>
-                          <p className="text-[11px] font-black text-forest/40 uppercase tracking-widest">
-                            {allQuestions.filter(q => (q.subject || 'Uncategorized') === selectedSubject && (q.chapter || 'Default') === chapter).length} Challenges
+                          <p className="text-[11px] font-black text-slate-700 uppercase tracking-widest">
+                            {countLabel(allQuestions.filter(q => q.subject === selectedSubject && q.chapter === chapter).length, 'Challenge')}
                           </p>
                         </div>
                       </div>
@@ -205,162 +199,50 @@ export default function QuizGame() {
     );
   }
 
-  if (questions.length === 0) {
-    return (
-      <div className="p-8 text-center space-y-4">
-        <AlertCircle className="mx-auto text-butter" size={48} />
-        <h2 className="text-xl font-bold text-butter">No questions available</h2>
-        <p className="text-butter/60">Check back later when the admin adds some quizzes!</p>
-      </div>
-    );
-  }
-
   const currentQuestion = questions[currentIndex];
-
   const renderHeader = () => (
-    <div className="sticky top-0 z-40 bg-forest/80 backdrop-blur-md pb-4 pt-2">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2 bg-butter px-4 py-2 rounded-full shadow-sm border border-forest/10">
-          <Star className="text-yellow-600" size={18} />
-          <span className="font-black text-forest">{xpGained - xpLost} <b>BRAIN GAINS</b></span>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 bg-butter px-4 py-2 rounded-full border border-forest/10">
-            <Book className="text-forest" size={16} />
-            <span className="font-black text-forest text-[11px] uppercase tracking-widest">
-              Progress {totalQuestionsAttended % 15}/15
-            </span>
-          </div>
-          <div className="flex items-center gap-2 bg-butter px-4 py-2 rounded-full border border-forest/10">
-            <Trophy className="text-forest" size={18} />
-            <motion.span 
-              key={userTotalXp}
-              initial={{ scale: 1.5, color: "#003631" }}
-              animate={{ scale: 1, color: "#003631" }}
-              className="font-black text-forest text-sm"
-            >
-              {userTotalXp}
-            </motion.span>
-          </div>
-          {!gameOver && (
-            <div className="flex items-center gap-2 bg-butter px-4 py-2 rounded-full shadow-sm border border-forest/10">
-              <Timer className="text-forest" size={18} />
-              <span className="font-black text-forest">{currentIndex + 1}/{questions.length}</span>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+    <header className="practice-rule">
+      <span>{selectedSubject} / {selectedChapter}</span>
+      <span>{gameOver ? 'Round finished' : `Question ${currentIndex + 1} of ${questions.length}`}</span>
+      <span>{userTotalXp} XP · Checkpoint {totalQuestionsAttended % 15}/15</span>
+    </header>
   );
 
-  const renderAnimation = () => (
-    <AnimatePresence mode="wait">
-      {showXpAnimation && (
-        <motion.div
-          key={isMilestone ? "milestone" : "instant"}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center"
-        >
-          <motion.div
-            initial={{ scale: 0.5, opacity: 0, x: 0, y: 0 }}
-            animate={{ 
-              scale: isMilestone ? [0.5, 1.5, 1.5, 0.2] : [0.5, 1.2, 1.2, 0.2],
-              opacity: [0, 1, 1, 0],
-              x: [0, 0, 0, window.innerWidth / 2 - 40],
-              y: [0, 0, 0, -window.innerHeight / 2 + 40]
-            }}
-            transition={{
-              duration: isMilestone ? 3 : 1.5,
-              times: [0, 0.2, 0.7, 1],
-              ease: "easeInOut"
-            }}
-            onAnimationComplete={() => {
-              setShowXpAnimation(false);
-              
-            }}
-            className={cn(
-              "text-white px-10 py-6 rounded-[2.5rem] shadow-2xl flex flex-col items-center gap-2 border-4",
-              isMilestone ? "bg-butter border-yellow-400 text-forest" : (animValue > 0 ? "bg-green-600 border-green-400" : "bg-red-600 border-red-400")
-            )}
-          >
-            {isMilestone ? (
-              <div className="relative">
-                <Trophy className="text-yellow-600" size={48} />
-                <motion.div
-                  animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.2, 1.2, 1] }}
-                  transition={{ repeat: Infinity, duration: 1 }}
-                  className="absolute -top-4 -right-4 text-yellow-500"
-                >
-                  <PartyPopper size={32} />
-                </motion.div>
-                <motion.div
-                  animate={{ rotate: [0, -15, 15, 0], scale: [1, 1.2, 1.2, 1] }}
-                  transition={{ repeat: Infinity, duration: 1, delay: 0.5 }}
-                  className="absolute -top-4 -left-4 text-yellow-500"
-                >
-                  <PartyPopper size={32} className="-scale-x-100" />
-                </motion.div>
-              </div>
-            ) : (
-              animValue > 0 ? <Star className="text-yellow-300 fill-yellow-300" size={32} /> : <AlertCircle size={32} />
-            )}
-            <div className="text-center">
-              <p className={cn("text-[11px] font-black uppercase tracking-[0.2em] opacity-80", isMilestone ? "text-forest/60" : "text-white/80")}>
-                {isMilestone ? "Milestone Reward" : (animValue > 0 ? "Brain Gain" : "Brain Drain")}
-              </p>
-              <span className={cn("font-black", isMilestone ? "text-6xl text-forest" : "text-3xl text-white")}>
-                {animValue > 0 ? `+${animValue}` : animValue}
-              </span>
-              {isMilestone && (
-                <p className="text-[11px] font-black uppercase tracking-widest mt-1 text-yellow-700">
-                  Points Earned!
-                </p>
-              )}
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+  const renderAnimation = () => showXpAnimation && (
+    <motion.aside role="status" className="quiz-stamp" initial={{opacity: 0}} animate={{opacity: [0, 1, 1, 0]}}
+      transition={{duration: 2.6, times: [0, .1, .9, 1]}} onAnimationComplete={() => setShowXpAnimation(false)}>
+      <Trophy size={18}/> Practice checkpoint · {animValue} of 15 correct
+    </motion.aside>
   );
 
   if (gameOver) {
     return (
-      <div className="p-6 space-y-8 pb-24 relative min-h-full">
+      <div className="mx-auto max-w-4xl p-6 space-y-8 pb-24 relative min-h-full">
         {renderHeader()}
         {renderAnimation()}
         <div className="flex flex-col items-center justify-center text-center space-y-6 pt-4">
           <div className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center text-butter">
             <Trophy size={48} />
           </div>
-          <h2 className="text-3xl font-black text-butter">Quiz Complete!</h2>
-          {isSubmitting && (
-            <div className="flex items-center gap-2 text-butter animate-pulse">
-              <div className="w-2 h-2 bg-butter rounded-full animate-bounce"></div>
-              <div className="w-2 h-2 bg-butter rounded-full animate-bounce [animation-delay:0.2s]"></div>
-              <div className="w-2 h-2 bg-butter rounded-full animate-bounce [animation-delay:0.4s]"></div>
-              <span className="text-xs font-bold uppercase tracking-widest">Syncing <b>BRAIN GAINS</b>...</span>
-            </div>
-          )}
+          <h2 className="text-3xl font-black text-butter">Round complete</h2>
           <div className="card w-full p-6 space-y-4 bg-butter border-forest/10">
             <div className="flex justify-between items-center">
-              <span className="text-forest/40 font-bold uppercase text-xs tracking-widest"><b>BRAIN GAINS</b> Gained</span>
+              <span className="text-slate-700 font-bold uppercase text-xs tracking-widest">XP Gained</span>
               <span className="text-2xl font-black text-green-600">+{xpGained}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-forest/40 font-bold uppercase text-xs tracking-widest"><b>BRAIN GAINS</b> Lost</span>
-              <span className="text-2xl font-black text-red-600">-{xpLost}</span>
+              <span className="text-slate-700 font-bold uppercase text-xs tracking-widest">XP Lost</span>
+              <span className={cn('text-2xl font-black', xpLost ? 'text-red-700' : 'text-forest')}>{xpLost ? `−${xpLost}` : '0'}</span>
             </div>
             <div className="pt-4 border-t border-forest/10 flex justify-between items-center">
               <span className="text-forest font-black uppercase text-sm tracking-widest">Net Result</span>
-              <span className="text-3xl font-black text-forest">{xpGained - xpLost} <b>BRAIN GAINS</b></span>
+              <span className="text-3xl font-black text-forest">{xpGained - xpLost} XP</span>
             </div>
           </div>
 
           {/* Question Summary */}
           <div className="w-full space-y-3">
-            <p className="text-xs font-black uppercase text-butter/40 tracking-widest text-left">Quiz Summary</p>
+            <p className="text-xs font-black uppercase text-butter tracking-widest text-left">Quiz Summary</p>
             <div className="flex flex-wrap gap-2 justify-center">
               {quizResults.map((res, i) => (
                 <div 
@@ -377,6 +259,7 @@ export default function QuizGame() {
           </div>
 
           <div className="flex flex-col gap-3 w-full">
+            {notification && <p role="alert" className="text-red-400">{notification.message}</p>}
             <button 
               onClick={() => startQuiz()} 
               className="btn-primary w-full bg-butter text-forest hover:bg-butter/90"
@@ -385,7 +268,10 @@ export default function QuizGame() {
               <ChevronRight size={20} />
             </button>
             <button 
-              onClick={() => window.location.reload()} 
+              onClick={() => {
+                setQuestions([]); setQuizId(''); setSelectedSubject(null); setSelectedChapter(null);
+                setGameOver(false); setLibraryVersion(n => n + 1);
+              }}
               className="text-butter/40 font-bold text-sm hover:text-butter transition-colors"
             >
               Back to Menu
@@ -397,7 +283,7 @@ export default function QuizGame() {
   }
 
   return (
-    <div className="p-6 space-y-8 pb-24 relative">
+    <div className="mx-auto max-w-4xl p-6 space-y-8 pb-24 relative">
       {renderHeader()}
       {renderAnimation()}
       <AnimatePresence>
@@ -418,14 +304,10 @@ export default function QuizGame() {
       </AnimatePresence>
 
       <div className="space-y-6">
-        <div className="card bg-butter border-2 border-forest/10 p-8 min-h-[200px] flex flex-col justify-center relative overflow-hidden">
-          <div className="absolute top-4 left-4 bg-forest/5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest text-forest/60 flex items-center gap-2">
-            <span>Chapter: {currentQuestion.chapter}</span>
-          </div>
-          <h3 className="text-xl font-bold leading-tight mt-4 text-forest">{currentQuestion.question}</h3>
-          <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-forest/5 rounded-full blur-2xl"></div>
+        <div key={`${quizId}-${currentIndex}`} className="question-sheet">
+          <span className="folio-kicker">Exercise {String(currentIndex + 1).padStart(2, '0')}</span>
+          <h2>{currentQuestion.question}</h2>
         </div>
-
         <div className="space-y-3">
           {currentQuestion.options.map((option: string, idx: number) => {
             const isSelected = selectedOption === idx;
@@ -433,8 +315,8 @@ export default function QuizGame() {
             
             let statusClass = "bg-butter border-forest/10 hover:border-forest text-forest";
             if (selectedOption !== null) {
-              if (isCorrectOption) statusClass = "bg-green-500/20 border-green-500 text-green-700";
-              else if (isSelected) statusClass = "bg-red-500/20 border-red-500 text-red-700";
+              if (isCorrectOption) statusClass = "bg-green-100 border-green-600 text-green-950";
+              else if (isSelected) statusClass = "bg-red-100 border-red-600 text-red-950";
               else statusClass = "bg-butter border-forest/10 opacity-50 text-forest/40";
             }
 
@@ -444,9 +326,10 @@ export default function QuizGame() {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleAnswer(idx)}
                 disabled={pending || selectedOption !== null}
-                className={`w-full p-5 rounded-2xl border-2 text-left font-bold transition-all flex justify-between items-center ${statusClass}`}
+                data-mark={selectedOption === null ? undefined : isCorrectOption ? 'correct' : isSelected ? 'incorrect' : undefined}
+                className={`answer-line ${statusClass}`}
               >
-                <span>{option}</span>
+                <span className="answer-letter" aria-hidden="true">{'ABCD'[idx]}</span><span>{option}</span>
                 {selectedOption !== null && isCorrectOption && <CheckCircle size={20} className="text-green-500" />}
                 {selectedOption !== null && isSelected && !isCorrectOption && <XCircle size={20} className="text-red-500" />}
               </motion.button>
@@ -466,7 +349,7 @@ export default function QuizGame() {
             <AlertCircle className="text-red-500" size={20} />
             <p className="text-xs font-bold text-red-400">
               Warning: {consecutiveWrong}/10 consecutive wrong answers. 
-              <span className="block font-medium opacity-70">10 wrong answers will deduct 2 <b>BRAIN GAINS</b>!</span>
+              <span className="block font-medium opacity-70">Ten in a row costs up to 2 XP.</span>
             </p>
           </motion.div>
         )}
