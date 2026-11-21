@@ -3,6 +3,7 @@ import { Calendar as CalendarIcon, Bell, Clock, MapPin, Plus, X, ChevronLeft, Ch
 import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, getDoc } from '../../lib/local';
 import { db, auth } from '../../lib/local';
 
+import './calendar.css';
 import MonthSheet, { MonthOverlay } from './MonthSheet';
 import { motion, useReducedMotion } from 'motion/react';
 import { eventsInRange, localMidnight } from '../../lib/calendar';
@@ -16,7 +17,7 @@ const MonthCard = ({ year, month, isSelected, onClick }: { year: number, month: 
 
   const days = [];
   for (let i = 0; i < startDay; i++) {
-    days.push(<div key={`empty-${i}`} className="p-1"></div>);
+    days.push(<span key={`empty-${i}`} aria-hidden="true" />);
   }
   
   const today = new Date();
@@ -26,15 +27,7 @@ const MonthCard = ({ year, month, isSelected, onClick }: { year: number, month: 
     const isToday = isCurrentMonth && today.getDate() === i;
     
     days.push(
-      <div key={`day-${i}`} className="p-1 flex items-center justify-center">
-        {isToday ? (
-          <div className="w-6 h-6 rounded-full bg-forest text-butter flex items-center justify-center shadow-sm">
-            {i}
-          </div>
-        ) : (
-          <span>{i}</span>
-        )}
-      </div>
+      <span key={i} className="year-day" aria-current={isToday ? 'date' : undefined}>{i}</span>
     );
   }
 
@@ -51,7 +44,7 @@ const MonthCard = ({ year, month, isSelected, onClick }: { year: number, month: 
       <div className="grid grid-cols-7 text-[11px] text-center opacity-60 mb-2 font-bold">
         <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
       </div>
-      <div className="grid grid-cols-7 text-xs text-center gap-y-2 font-medium">
+      <div className="year-days grid grid-cols-7 text-xs text-center font-medium">
         {days}
       </div>
     </motion.button>
@@ -158,7 +151,7 @@ export default function Social() {
   const prevMonth = () => handleMonthClick(selectedMonth - 1);
 
   return (
-    <div className="p-6 space-y-8 max-w-6xl mx-auto pb-32">
+    <div className="calendar-view p-6 space-y-8 max-w-6xl mx-auto pb-32">
       {error && <p role="alert" className="text-red-400">{error}</p>}
       {/* Header & View Toggle */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
@@ -190,7 +183,7 @@ export default function Social() {
 
       {viewMode === 'grid' ? (
         /* Calendar Grid */
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="year-grid">
           {Array.from({ length: 12 }).map((_, i) => (
             <MonthCard 
               key={i} 
@@ -205,7 +198,7 @@ export default function Social() {
         /* Agenda View */
         <div className="space-y-8 max-w-3xl mx-auto">
           {/* Month Selector */}
-          <div className="flex items-center justify-center gap-6 text-butter">
+          <div className="agenda-picker flex items-center justify-center gap-6 text-butter">
             <button onClick={prevMonth} className="icon-button hover:bg-butter/10 rounded-full transition-all" aria-label="Previous month">
               <ChevronLeft size={24} />
             </button>
@@ -213,7 +206,7 @@ export default function Social() {
               <button type="button" className="min-h-11 px-2 text-butter/40 hover:text-butter/60 transition-all" onClick={prevMonth} aria-label="Go to previous month">
                 {months[(selectedMonth - 1 + 12) % 12]}
               </button>
-              <span key={`${currentYear}-${selectedMonth}`} className="agenda-month-name text-3xl text-butter">
+              <span key={`${currentYear}-${selectedMonth}`} className="agenda-month-name text-3xl text-butter" aria-label={selectedMonthName}>
                 {months[selectedMonth]}
               </span>
               <button type="button" className="min-h-11 px-2 text-butter/40 hover:text-butter/60 transition-all" onClick={nextMonth} aria-label="Go to next month">
@@ -261,7 +254,7 @@ export default function Social() {
           </div>
 
           {/* Event List */}
-          <div className="space-y-4">
+          <div className="agenda-list space-y-4">
             {filteredEvents.map((event) => {
               const isContinuous = event.endDate && event.endDate !== event.startDate;
               const progress = isContinuous ? getProgress(event.startDate, event.endDate) : 0;
@@ -272,7 +265,7 @@ export default function Social() {
               const monthStr = startDateObj.toLocaleString('default', { month: 'short' }).toUpperCase();
 
               return (
-                <div key={event.id} className="glass-card-dark border rounded-[2rem] p-6 flex items-center gap-6 transition-all group relative overflow-hidden hover:-translate-y-1">
+                <div key={event.id} className="agenda-entry glass-card-dark border rounded-[2rem] p-6 flex items-center gap-6">
                   {/* Left Date Section */}
                   <div className="flex flex-col items-center justify-center min-w-[60px] shrink-0">
                     <span className="text-xs font-black text-butter/60 uppercase tracking-widest">{dayOfWeek}</span>
@@ -285,16 +278,16 @@ export default function Social() {
 
                   {/* Inner Content */}
                   <div className="flex-1 min-w-0">
-                    <div className="glass-card-dark rounded-2xl p-4 inline-block min-w-[200px] max-w-full">
+                    <div className="agenda-copy">
                       <div className="flex items-center gap-2 text-butter/80 text-xs font-bold mb-1">
                         <Clock size={14} />
                         <span>{event.time || 'All Day'}</span>
                       </div>
-                      <h3 className="font-black text-lg text-butter truncate">{event.title}</h3>
+                      <h3 className="font-black text-lg text-butter">{event.title}</h3>
                       {event.location && (
                         <div className="flex items-center gap-1 text-butter/60 text-xs mt-1">
                           <MapPin size={12} />
-                          <span className="truncate">{event.location}</span>
+                          <span>{event.location}</span>
                         </div>
                       )}
                     </div>
@@ -337,7 +330,7 @@ export default function Social() {
 
       {/* Add Event Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+        <div className="calendar-form-layer fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <div className="glass-card-dark border rounded-3xl p-6 w-full max-w-md" role="dialog" aria-modal="true" aria-labelledby="event-dialog-title">
             <div className="flex justify-between items-center mb-6">
               <h2 id="event-dialog-title" className="text-2xl font-black text-butter">Add event</h2>
@@ -376,6 +369,7 @@ export default function Social() {
                   <label htmlFor="event-end" className="block text-sm font-bold text-butter/70 mb-1">End date <span className="font-medium text-butter/45">(optional)</span></label>
                   <input 
                     id="event-end"
+                    min={newEvent.startDate || undefined}
                     type="date" 
                     value={newEvent.endDate}
                     onChange={e => setNewEvent({...newEvent, endDate: e.target.value})}

@@ -61,6 +61,14 @@ app.whenReady().then(async () => {
     await evaluate("document.querySelector('.mobile-dock a[href=\"/quiz\"]').click()");
     await ready('[data-page="/quiz"]');
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.mobile-dock [aria-current=page]'),'::after').animationName"), 'none');
+    win.setContentSize(320, 568);
+    await evaluate(`document.querySelector('.mobile-dock a[href="/social"]').click()`);
+    await ready('.year-day');
+    assert.ok(await evaluate("document.querySelector('.year-day').clientWidth >= 22"), 'Seven legible date columns on a phone');
+    await evaluate("document.querySelector('.almanac-month').click()");
+    await ready('.month-sheet');
+    assert.ok(await evaluate("document.querySelector('.month-sheet').scrollHeight <= document.querySelector('.month-sheet').clientHeight + 1"), 'Month fits without scrolling');
+    await evaluate("document.querySelector('.year-return').click()");
     console.log('PASS: responsive desk, tab turn, reduced motion, mobile navigation.');
   } catch (error) { console.error(error); win.destroy(); app.exit(1); return; }
   win.destroy(); app.quit();
