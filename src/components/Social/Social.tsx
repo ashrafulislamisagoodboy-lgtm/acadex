@@ -3,10 +3,9 @@ import { Calendar as CalendarIcon, Bell, Clock, MapPin, Plus, X, ChevronLeft, Ch
 import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, getDoc } from '../../lib/local';
 import { db, auth } from '../../lib/local';
 
-import './almanac.css';
-import { dateKey, eventsInRange, localMidnight } from '../../lib/calendar';
+import { eventsInRange, localMidnight } from '../../lib/calendar';
 
-const MonthCard = ({ year, month, entries, isSelected, onClick }: { entries: {startDate: string; endDate?: string}[]; year: number, month: number, isSelected: boolean, onClick: () => void }) => {
+const MonthCard = ({ year, month, isSelected, onClick }: { year: number, month: number, isSelected: boolean, onClick: () => void }) => {
   const monthDate = new Date(year, month, 1);
   const monthName = monthDate.toLocaleString('default', { month: 'long' });
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -23,9 +22,17 @@ const MonthCard = ({ year, month, entries, isSelected, onClick }: { entries: {st
   for (let i = 1; i <= daysInMonth; i++) {
     const isToday = isCurrentMonth && today.getDate() === i;
     
-    const key = dateKey(new Date(year, month, i));
-    const scheduled = entries.some(event => event.startDate <= key && (event.endDate || event.startDate) >= key);
-    days.push(<span key={i} className="almanac-day" data-today={isToday} data-event={scheduled}>{i}</span>);
+    days.push(
+      <div key={`day-${i}`} className="p-1 flex items-center justify-center">
+        {isToday ? (
+          <div className="w-6 h-6 rounded-full bg-forest text-butter flex items-center justify-center shadow-sm">
+            {i}
+          </div>
+        ) : (
+          <span>{i}</span>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -33,7 +40,7 @@ const MonthCard = ({ year, month, entries, isSelected, onClick }: { entries: {st
       type="button"
       onClick={onClick}
       aria-pressed={isSelected}
-      aria-label={`Open ${monthName} ${year} agenda · ${entries.length} scheduled`}
+      aria-label={`Open ${monthName} ${year} agenda`}
       className="almanac-month"
     >
       <h3 className="month-title">{monthName} <small>{String(month + 1).padStart(2, '0')}</small></h3>
@@ -43,7 +50,6 @@ const MonthCard = ({ year, month, entries, isSelected, onClick }: { entries: {st
       <div className="grid grid-cols-7 text-xs text-center gap-y-2 font-medium">
         {days}
       </div>
-      <span className="month-foot">{entries.length ? `${entries.length} scheduled` : 'No events'}</span>
     </button>
   );
 };
@@ -142,45 +148,53 @@ export default function Social() {
   const nextMonth = () => handleMonthClick(selectedMonth + 1);
   const prevMonth = () => handleMonthClick(selectedMonth - 1);
 
-  const today = new Date();
-  const todayKey = dateKey(today);
-  const featured = events.find(e => e.startDate <= todayKey && (e.endDate || e.startDate) >= todayKey) || events.find(e => e.startDate > todayKey);
-  const ongoing = featured && featured.startDate <= todayKey;
-  const showFeatured = () => {
-    if (!featured) return;
-    setMonthDate(ongoing ? today : localMidnight(featured.startDate));
-    setDayFilter(ongoing ? 'today' : 'all'); setViewMode('agenda');
-  };
   return (
-    <div className="school-almanac">
+    <div className="p-6 space-y-8 max-w-6xl mx-auto pb-32">
       {error && <p role="alert" className="text-red-400">{error}</p>}
-      <header className="almanac-cover">
-        <div className="date-leaf" aria-label={today.toLocaleDateString(undefined,{dateStyle:'full'})}>
-          <span>{today.toLocaleDateString(undefined,{month:'short'})}</span><strong>{today.getDate()}</strong><small>{today.toLocaleDateString(undefined,{weekday:'short'})}</small>
+      {/* Header & View Toggle */}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
+        <div className="flex items-center gap-3">
+          <CalendarIcon className="text-butter" size={32} />
+          <div>
+            <p className="folio-kicker">Almanac / School schedule</p>
+            <h1 className="text-3xl md:text-4xl font-black text-butter">{currentYear} calendar</h1>
+          </div>
         </div>
-        <div className="almanac-intro"><small>Acadex / School schedule</small><h1>Campus almanac</h1><p>School dates, from a single day to the whole year.</p></div>
-        <div className="almanac-feature"><small>{ongoing ? 'Happening today' : 'Next on the calendar'}</small>{featured ? <button onClick={showFeatured}><strong>{featured.title}</strong><span>{ongoing ? 'Open today’s agenda' : localMidnight(featured.startDate).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})} →</span></button> : <p>No upcoming events listed.</p>}</div>
-      </header>
-      <div className="almanac-bar"><div><small>Schedule explorer</small><h2>{viewMode === 'grid' ? `${currentYear} at a glance` : `${selectedMonthName} ${currentYear}`}</h2></div>
-        <div className="almanac-switch" aria-label="Calendar view"><button aria-pressed={viewMode==='grid'} onClick={()=>setViewMode('grid')}>Year grid</button><button aria-pressed={viewMode==='agenda'} onClick={()=>setViewMode('agenda')}>Agenda</button></div>
+        
+        <div className="glass-card-dark flex items-center rounded-full p-1 border">
+          <button 
+            onClick={() => setViewMode('agenda')}
+            aria-pressed={viewMode === 'agenda'}
+            className={`px-6 py-2 rounded-full font-bold transition-all ${viewMode === 'agenda' ? 'bg-butter text-forest' : 'text-butter/60 hover:text-butter'}`}
+          >
+            Agenda
+          </button>
+          <button 
+            onClick={() => setViewMode('grid')}
+            aria-pressed={viewMode === 'grid'}
+            className={`px-6 py-2 rounded-full font-bold transition-all ${viewMode === 'grid' ? 'bg-butter text-forest' : 'text-butter/60 hover:text-butter'}`}
+          >
+            Grid
+          </button>
+        </div>
       </div>
+
       {viewMode === 'grid' ? (
         /* Calendar Grid */
-        <section aria-label="Year overview"><div className="almanac-key"><span><i /> Scheduled day</span><div><button aria-label="Previous year" onClick={()=>setMonthDate(new Date(currentYear-1,selectedMonth,1))}><ChevronLeft size={18}/></button><b>{currentYear}</b><button aria-label="Next year" onClick={()=>setMonthDate(new Date(currentYear+1,selectedMonth,1))}><ChevronRight size={18}/></button></div></div><div className="almanac-grid">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {Array.from({ length: 12 }).map((_, i) => (
             <MonthCard 
               key={i} 
               year={currentYear} 
               month={i} 
-              entries={eventsInRange(events,new Date(currentYear,i,1),new Date(currentYear,i+1,0))}
               isSelected={selectedMonth === i}
               onClick={() => handleMonthClick(i)}
             />
           ))}
-        </div></section>
+        </div>
       ) : (
         /* Agenda View */
-        <div className="almanac-agenda space-y-6">
+        <div className="space-y-8 max-w-3xl mx-auto">
           {/* Month Selector */}
           <div className="flex items-center justify-center gap-6 text-butter">
             <button onClick={prevMonth} className="icon-button hover:bg-butter/10 rounded-full transition-all" aria-label="Previous month">
@@ -249,7 +263,7 @@ export default function Social() {
               const monthStr = startDateObj.toLocaleString('default', { month: 'short' }).toUpperCase();
 
               return (
-                <div key={event.id} className="almanac-entry glass-card-dark border rounded-[2rem] p-6 flex items-center gap-6 transition-all group relative overflow-hidden hover:-translate-y-1">
+                <div key={event.id} className="glass-card-dark border rounded-[2rem] p-6 flex items-center gap-6 transition-all group relative overflow-hidden hover:-translate-y-1">
                   {/* Left Date Section */}
                   <div className="flex flex-col items-center justify-center min-w-[60px] shrink-0">
                     <span className="text-xs font-black text-butter/60 uppercase tracking-widest">{dayOfWeek}</span>
@@ -262,12 +276,12 @@ export default function Social() {
 
                   {/* Inner Content */}
                   <div className="flex-1 min-w-0">
-                    <div className="rounded-2xl w-full">
+                    <div className="glass-card-dark rounded-2xl p-4 inline-block min-w-[200px] max-w-full">
                       <div className="flex items-center gap-2 text-butter/80 text-xs font-bold mb-1">
                         <Clock size={14} />
                         <span>{event.time || 'All Day'}</span>
                       </div>
-                      <h3 className="font-black text-lg text-butter break-words">{event.title}</h3>
+                      <h3 className="font-black text-lg text-butter truncate">{event.title}</h3>
                       {event.location && (
                         <div className="flex items-center gap-1 text-butter/60 text-xs mt-1">
                           <MapPin size={12} />
@@ -309,7 +323,7 @@ export default function Social() {
 
       {/* Add Event Modal */}
       {showModal && (
-        <div className="almanac-overlay fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <div className="glass-card-dark border rounded-3xl p-6 w-full max-w-md" role="dialog" aria-modal="true" aria-labelledby="event-dialog-title">
             <div className="flex justify-between items-center mb-6">
               <h2 id="event-dialog-title" className="text-2xl font-black text-butter">Add event</h2>
