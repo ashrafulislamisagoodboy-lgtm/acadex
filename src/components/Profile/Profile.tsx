@@ -1,3 +1,4 @@
+import './passport.css';
 import { readFileUrl } from '../../lib/imports';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -5,7 +6,7 @@ import { api, doc, updateDoc, collection, query, onSnapshot, orderBy, limit } fr
 import { signOut } from '../../lib/local';
 
 import { db, auth } from '../../lib/local';
-import { User, Shield, Trophy, Star, QrCode, Scan, Edit2, CheckCircle, AlertCircle, Camera, LogOut, Sparkles, Book, KeyRound, Eye, EyeOff } from 'lucide-react';
+import { User, Shield, Trophy, Star, QrCode, Scan, Edit2, CheckCircle, AlertCircle, Camera, LogOut, Sparkles, Compass, Book, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../lib/utils';
 import { QRCodeSVG } from 'qrcode.react';
@@ -234,66 +235,36 @@ function ProfileView({ uid }: { uid: string }) {
     );
   }
 
+  const xp = userData.xp || 0;
+  const level = Math.floor(xp / 100) + 1;
+  const initials = (userData.name || userData.username || '?').trim().split(/\s+/).slice(0, 2).map((word: string) => word[0]).join('').toUpperCase();
   return (
-    <div className="p-6 space-y-8 pb-24">
-      <div className="relative">
-        {/* Banner */}
-        <div className="glass-card h-32 rounded-3xl overflow-hidden relative group">
-          {userData.bannerUrl ? (
-            <img src={userData.bannerUrl} alt="Banner" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-          ) : (
-            <div className="record-banner"><span>Acadex &nbsp; / &nbsp; Learner record</span></div>
-          )}
-          
-          {isOwnProfile && (
-            <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
-              <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageSelect(e, 'banner')} />
-              <Camera className="text-white" size={32} />
-            </label>
-          )}
+    <div className="learner-passport">
+      <header className="passport-cover">
+        <div className="passport-banner">
+          {userData.bannerUrl && <img src={userData.bannerUrl} alt="" referrerPolicy="no-referrer" />}
+          <span className="passport-imprint"><Compass size={19} aria-hidden="true" /> Acadex / Learner passport</span>
+          {isOwnProfile && <label className="passport-camera"><Camera size={16} aria-hidden="true" /><span>Change cover</span>
+            <input type="file" className="sr-only" accept="image/*" aria-label="Change cover" onChange={e => handleImageSelect(e, 'banner')} /></label>}
         </div>
-
-        {/* Profile Info Overlay */}
-        <div className="absolute -bottom-12 left-6 flex items-end gap-4">
-          <div className="relative group">
-            <div className="w-24 h-24 rounded-3xl bg-forest p-1 shadow-xl overflow-hidden border border-white/10">
-              <img 
-                src={userData.photoUrl || '/logo.png'} 
-                alt={userData.name} 
-                className="w-full h-full object-cover rounded-2xl" 
-                referrerPolicy="no-referrer"
-              />
-            </div>
-            
-            {isOwnProfile && (
-              <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer rounded-3xl">
-                <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageSelect(e, 'pfp')} />
-                <Camera className="text-white" size={24} />
-              </label>
-            )}
+        <div className="passport-details">
+          <div className="passport-photo">
+            {userData.photoUrl ? <img src={userData.photoUrl} alt="" referrerPolicy="no-referrer" /> : <span aria-hidden="true">{initials}</span>}
+            {isOwnProfile && <label className="passport-camera"><Camera size={16} aria-hidden="true" /><input className="sr-only" type="file" accept="image/*" aria-label="Change portrait" onChange={e => handleImageSelect(e, 'pfp')} /></label>}
           </div>
-          <div className="mb-2">
-            <h2 className="text-2xl font-black text-butter drop-shadow-md">{userData.name}</h2>
-            <p className="text-butter/80 font-bold text-sm drop-shadow-sm">@{userData.username}</p>
-          </div>
+          <div className="passport-name"><small>{userData.role === 'admin' ? 'Administrator' : 'Learner'}{userData.grade ? ` · Grade ${userData.grade}` : ''}</small><h1>{userData.name}</h1><p>@{userData.username}</p></div>
+          <button className="passport-share" onClick={() => setShowQR(true)}><QrCode size={18} /> Profile QR</button>
         </div>
-      </div>
-
-      <div className="pt-12 space-y-6">
-        <div className="flex gap-4">
-          <div className="flex-1 card flex flex-col items-center justify-center py-6 text-center bg-butter border-forest/10">
-            <Trophy className="text-forest mb-2" size={24} />
-            <p className="text-2xl font-black text-forest">{userData.xp}</p>
-            <p className="text-[11px] font-bold uppercase text-forest/40 tracking-widest">Total XP</p>
-          </div>
-          <div className="flex-1 card flex flex-col items-center justify-center py-6 text-center bg-butter border-forest/10">
-            <Star className="text-yellow-600 mb-2" size={24} />
-            <p className="text-2xl font-black text-forest">{userData.achievements?.length || 0}</p>
-            <p className="text-[11px] font-bold uppercase text-forest/40 tracking-widest">Achievements</p>
-          </div>
+        <div className="passport-ledger">
+          <div className="passport-level"><strong>Level {level}</strong><progress value={xp % 100} max="100" aria-label={`Progress to level ${level + 1}`} /><small>{100 - xp % 100} XP to level {level + 1}</small></div>
+          <div><strong>{xp.toLocaleString()}</strong><small>Total XP</small></div>
+          <div><strong>{(userData.totalQuizzesPlayed || 0).toLocaleString()}</strong><small>Quizzes finished</small></div>
+          <div><strong>{userData.achievements?.length || 0}</strong><small>Earned stamps</small></div>
         </div>
-
-        <div className="card space-y-4 bg-butter border-forest/10">
+      </header>
+      <nav aria-label="Passport pages" className="passport-index"><span>Page index</span><a href="#passport-record">01 · Record</a><a href="#passport-log">02 · Practice</a><a href="#passport-stamps">03 · Stamps</a></nav>
+      <div className="passport-pages space-y-6">
+        <div id="passport-record" className="passport-page card space-y-4 bg-butter border-forest/10">
           <div className="flex justify-between items-center mb-2">
             <h3 className="font-bold text-forest flex items-center gap-2">
               <User size={18} className="text-forest" />
@@ -388,10 +359,10 @@ function ProfileView({ uid }: { uid: string }) {
           {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
         </div>
 
-        <div className="card space-y-4 bg-butter border-forest/10">
+        <div id="passport-log" className="passport-page card space-y-4 bg-butter border-forest/10">
           <h3 className="font-bold text-forest flex items-center gap-2">
             <Book size={18} className="text-forest" />
-            Quiz History
+            Practice log
           </h3>
           <div className="space-y-3">
             {quizAttempts.length > 0 ? (
@@ -415,16 +386,16 @@ function ProfileView({ uid }: { uid: string }) {
           </div>
         </div>
 
-        <div className="card space-y-4 bg-butter border-forest/10">
+        <div id="passport-stamps" className="passport-page card space-y-4 bg-butter border-forest/10">
           <h3 className="font-bold text-forest flex items-center gap-2">
             <Shield size={18} className="text-forest" />
-            Achievements
+            Achievement stamps
           </h3>
           <div className="flex flex-wrap gap-2">
             {userData.achievements?.length > 0 ? (
               userData.achievements.map((achievement: string, idx: number) => (
-                <span key={idx} className="bg-forest/10 text-forest px-3 py-1 rounded-full text-xs font-bold border border-forest/20">
-                  {achievement}
+                <span key={idx} className="passport-stamp">
+                  <Star size={16} aria-hidden="true" />{achievement}
                 </span>
               ))
             ) : (
@@ -520,10 +491,6 @@ function ProfileView({ uid }: { uid: string }) {
         )}
 
         <div className="flex gap-4">
-          <button onClick={() => setShowQR(true)} className="btn-secondary flex-1 py-4 flex items-center justify-center gap-2 bg-butter text-forest border-forest/10 hover:bg-butter/90">
-            <QrCode size={20} />
-            My QR
-          </button>
           <button onClick={() => setShowScanner(true)} className="btn-primary flex-1 py-4 flex items-center justify-center gap-2 bg-forest text-butter hover:bg-forest/90">
             <Scan size={20} />
             Scan QR
@@ -542,7 +509,7 @@ function ProfileView({ uid }: { uid: string }) {
       </div>
 
       {showQR && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-8">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] flex items-center justify-center p-8">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -560,7 +527,7 @@ function ProfileView({ uid }: { uid: string }) {
       )}
 
       {showScanner && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-8">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] flex flex-col items-center justify-center p-8">
           <div className="glass-card-dark rounded-3xl p-6 w-full max-w-sm space-y-4 border">
             <h3 className="text-xl font-bold text-butter text-center">Scan Profile QR</h3>
             <div id="reader" className="overflow-hidden rounded-2xl border-2 border-white/10"></div>
