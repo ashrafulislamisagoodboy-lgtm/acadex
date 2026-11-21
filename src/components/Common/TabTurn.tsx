@@ -51,10 +51,13 @@ export default function TabTurn({ section }: { section: Section }) {
   const OldIcon = turn.from.icon, NewIcon = turn.to.icon;
   const direction = sections.indexOf(turn.to) > sections.indexOf(turn.from) ? 1 : -1;
   return <div key={turn.id} className="tab-turn" data-direction={direction > 0 ? 'forward' : 'back'} aria-hidden="true"
-    style={{ '--turn-direction': direction, '--turn-tint': turn.to.tint, '--flight-path': `path("${turn.flight}")`,
+    style={{ '--turn-direction': direction, '--turn-tint': turn.to.tint, '--depart-tint': turn.from.tint, '--flight-path': `path("${turn.flight}")`,
       '--from-x': `${turn.start.x}px`, '--from-y': `${turn.start.y}px`,
       '--to-x': `${turn.end.x}px`, '--to-y': `${turn.end.y}px`,
     } as CSSProperties}>
+    <div className="tab-turn__prism">
+      <div className="tab-turn__fold"><NewIcon aria-hidden="true" strokeWidth={1} /></div>
+    </div>
     <svg className="tab-turn__track" focusable="false">
       <path d={turn.flight} pathLength="1" />
     </svg>

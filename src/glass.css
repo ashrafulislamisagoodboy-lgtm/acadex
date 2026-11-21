@@ -200,6 +200,36 @@ body { background: #1c2a47; }
   to { transform:scale(2); opacity:0; }
 }
 
+/* A folded ribbon of glass turns the page. Only this narrow strip travels;
+   the destination beneath stays interactive and never needs a screenshot. */
+.tab-turn__prism {
+  --prism-shear:-12deg;
+  position:absolute; left:0; top:-8%; height:116%; width:clamp(94px,24vw,360px);
+  opacity:0;
+}
+.tab-turn[data-direction='back'] .tab-turn__prism { --prism-shear:12deg; }
+.tab-turn__fold {
+  position:absolute; inset:0; display:grid; place-items:center;
+  transform:skewX(var(--prism-shear));
+  background:linear-gradient(90deg,transparent 0%, color-mix(in srgb,var(--depart-tint) 24%,transparent) 32%, #ffffff63 33%, #ffffff0d 34%,
+    color-mix(in srgb,var(--turn-tint) 34%,transparent) 64%, #ffffffaa 65%, #e6fbff55 66%, transparent 100%);
+}
+.tab-turn__fold svg { width:clamp(42px,7vw,90px); height:auto; color:#fff; opacity:.82; transform:skewX(calc(-1 * var(--prism-shear))); }
+@media (prefers-reduced-motion:no-preference) {
+  .tab-turn__prism { animation:prism-cross 545ms cubic-bezier(.33,.04,.26,.96) both; }
+  .tab-turn[data-direction='back'] .tab-turn__prism { animation-direction:reverse; animation-timing-function:cubic-bezier(.74,.04,.67,.96); }
+  .tab-turn__fold { animation:prism-open 545ms ease-in-out both; }
+}
+@keyframes prism-cross {
+  0% { transform:translate3d(-100%,0,0); opacity:0; }
+  15%, 75% { opacity:1; }
+  100% { transform:translate3d(100vw,0,0); opacity:0; }
+}
+@keyframes prism-open {
+  0%,100% { transform:skewX(var(--prism-shear)) scaleX(.2); }
+  42%,60% { transform:skewX(var(--prism-shear)) scaleX(1); }
+}
+
 /* A readable inset for the calendar import instructions, even over dark hills. */
 .calendar-import.card { padding:clamp(1rem,3vw,2rem); color:#172943; background-color:#f4f8fcf2; }
 .calendar-import h3 { font-size:1.25rem; line-height:1.3; }

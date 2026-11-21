@@ -49,6 +49,7 @@ app.whenReady().then(async () => {
     await evaluate(`document.querySelector('.mobile-dock a[href="/leaderboard"]').click()`);
     await ready('.tab-turn__coin');
     assert.equal(await evaluate("document.querySelector('.tab-turn__title').textContent"), 'Ranks');
+    assert.equal(await evaluate("getComputedStyle(document.querySelector('.tab-turn__prism')).animationName"), 'prism-cross');
     assert.ok(await evaluate("getComputedStyle(document.querySelector('.tab-turn__lens')).offsetPath.startsWith('path(')"), 'Badge follows the drawn arc');
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.tab-turn__coin')).animationName"), 'turn-coin');
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.route-stage')).animationName"), 'section-arrive');
