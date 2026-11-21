@@ -77,7 +77,7 @@ function PodiumShow({ leaders, ranked, answers }: { leaders: LeaderboardUser[]; 
           <span className="podium-place" aria-hidden="true">{i === 0 && <Crown size={18}/>} {['I','II','III'][i]}</span>
           <strong className="podium-etch">{user ? getDisplayName(user) : 'Unclaimed'}</strong><small>{user ? `${numberFormatter.format(user.xp || 0)} XP` : 'Open place'}</small></>;
         return <li key={i} className="podium-step" data-place={i+1} data-empty={!user} data-lit={!!user && i === place}>
-          {user ? <Link className="podium-crystal" to={`/profile/${user.id}`} aria-label={`Rank ${i+1}: ${getDisplayName(user)}, ${user.xp || 0} XP. View profile.`}>{face}</Link>
+          {user ? <Link viewTransition className="podium-crystal" to={`/profile/${user.id}`} aria-label={`Rank ${i+1}: ${getDisplayName(user)}, ${user.xp || 0} XP. View profile.`}>{face}</Link>
             : <div className="podium-crystal" aria-label={`Place ${i+1} unclaimed`}>{face}</div>}
         </li>;
       })}
@@ -185,7 +185,7 @@ export default function Leaderboard() {
       <section className="podium-personal" aria-labelledby="personal-place"><div><h2 id="personal-place" className="ranks-kicker">Your standing</h2><strong>{myRank ? `#${myRank}` : 'Unranked'}</strong></div>
         <div>{self && <b>Level {getLevel(self.xp)} · {num(self.xp)} XP</b>}
           <p>{ahead && self ? `${num((ahead.xp || 0) - (self.xp || 0) + 1)} more XP to beat ${getDisplayName(ahead)}’s score.` : myRank === 1 ? 'You hold first place.' : 'The board lists up to 100 ranked profiles.'}</p></div>
-        {self && <Link to={`/profile/${self.id}`} aria-label="Open my record"><ArrowUpRight size={20}/></Link>}
+        {self && <Link viewTransition to={`/profile/${self.id}`} aria-label="Open my record"><ArrowUpRight size={20}/></Link>}
       </section>
       <section className="ranks-register" aria-labelledby="register-title">
         <div className="ranks-register-title"><div><p className="ranks-kicker">League directory</p><h2 id="register-title">All standings</h2></div>
@@ -198,7 +198,7 @@ export default function Leaderboard() {
         <div className="ranks-count"><span role="status">Showing {visibleUsers.length} of {overallRanking.length}</span>{hasFilters && <button onClick={clearFilters}>Reset filters</button>}</div>
         {visibleUsers.length ? <table className="ranks-table"><thead><tr><th scope="col">Rank</th><th scope="col">Learner</th><th scope="col" className="ranks-rounds">Quizzes</th><th scope="col">XP</th></tr></thead>
           <tbody>{visibleUsers.map(u=><tr key={u.id} data-self={u.id === self?.id}><td>#{rankById.get(u.id)}</td>
-            <td><Link to={`/profile/${u.id}`}><Avatar user={u}/><span className="ranks-identity"><strong>{getDisplayName(u)}{u.id === self?.id && <small> · You</small>}</strong><span>@{u.username || 'learner'}{u.grade ? ` · Grade ${u.grade}` : ''}</span></span></Link></td>
+            <td><Link viewTransition to={`/profile/${u.id}`}><Avatar user={u}/><span className="ranks-identity"><strong>{getDisplayName(u)}{u.id === self?.id && <small> · You</small>}</strong><span>@{u.username || 'learner'}{u.grade ? ` · Grade ${u.grade}` : ''}</span></span></Link></td>
             <td className="ranks-rounds">{num(u.totalQuizzesPlayed)}</td><td>{num(u.xp)}</td></tr>)}</tbody></table> : <p className="ranks-empty">{hasFilters ? 'No learners match these filters.' : 'No standings to display yet.'}</p>}
       </section>
     </>}

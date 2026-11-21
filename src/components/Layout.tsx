@@ -2,7 +2,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { User, LogOut, BookOpen } from 'lucide-react';
 import { auth, db, signOut, doc, onSnapshot, type LocalUser } from '../lib/local';
-import { useState, useEffect, type CSSProperties } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react';
 import { cn } from '../lib/utils';
 
 import { sections } from './Common/sections';
@@ -48,6 +48,14 @@ export default function Layout({ user }: LayoutProps) {
   const navItems = sections.filter(item => item.path !== '/profile' && (item.path !== '/admin' || isAdmin));
   const sectionPath = '/' + (location.pathname.split('/')[1] || '');
   const section = sections.find(item => item.path === sectionPath) ?? sections[0];
+  const previous = useRef({ index: history.state?.idx ?? 0, section });
+  useLayoutEffect(() => {
+    const index = history.state?.idx ?? 0;
+    document.documentElement.dataset.shuffle = index < previous.current.index ||
+      sections.indexOf(section) < sections.indexOf(previous.current.section) ? 'back' : 'forward';
+    previous.current = { index, section };
+    return () => { delete document.documentElement.dataset.shuffle; };
+  }, [location.key, section]);
   const isCurrent = (path: string) => path === section.path;
   const displayName = userData?.name || user?.displayName || 'Learner';
 
@@ -57,7 +65,7 @@ export default function Layout({ user }: LayoutProps) {
 
       <header className="app-header">
         <div className="app-header__inner">
-          <Link to="/" className="brand-lockup" aria-label="Acadex home">
+          <Link viewTransition to="/" className="brand-lockup" aria-label="Acadex home">
             <span className="brand-mark" aria-hidden="true"><BookOpen size={21} /></span>
             <span>
               <strong>Acadex</strong>
@@ -70,7 +78,7 @@ export default function Layout({ user }: LayoutProps) {
               const Icon = item.icon;
               const active = isCurrent(item.path);
               return (
-                <Link
+                <Link viewTransition
                   key={item.path}
                   to={item.path}
                   aria-current={active ? 'page' : undefined}
@@ -86,7 +94,7 @@ export default function Layout({ user }: LayoutProps) {
 
           <div className="header-actions">
             <WallpaperControl />
-            <Link to={`/profile/${user?.uid}`} aria-current={isCurrent('/profile') ? 'page' : undefined} className="profile-chip" aria-label={`Open ${displayName}'s profile`}>
+            <Link viewTransition to={`/profile/${user?.uid}`} aria-current={isCurrent('/profile') ? 'page' : undefined} className="profile-chip" aria-label={`Open ${displayName}'s profile`}>
               <span className="profile-chip__avatar">
                 {userData?.photoUrl ? (
                   <img src={userData.photoUrl} alt="" referrerPolicy="no-referrer" />
@@ -119,7 +127,7 @@ export default function Layout({ user }: LayoutProps) {
           const Icon = item.icon;
           const active = isCurrent(item.path);
           return (
-            <Link
+            <Link viewTransition
               key={item.path}
               to={item.path}
               aria-current={active ? 'page' : undefined}

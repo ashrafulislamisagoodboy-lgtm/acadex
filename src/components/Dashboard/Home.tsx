@@ -27,12 +27,12 @@ export default function Home() {
       <div className="desk-intro"><p className="folio-kicker"><i /> Student handbook</p>
         <h1>The study <em>desk.</em></h1>
         <p>Welcome back, {profile?.name || auth.currentUser?.displayName || 'learner'}. Your practice library and school records are here.</p>
-        <Link className="desk-cta" to="/quiz">Start a quiz <ArrowRight size={18}/></Link>
+        <Link viewTransition className="desk-cta" to="/quiz">Start a quiz <ArrowRight size={18}/></Link>
       </div>
       <FieldAtlas />
     </section>
     <div className="desk-columns"><section><div className="desk-title"><span>01 / Index</span><h2>On your desk</h2></div>
-      <div>{index.filter(item => item.path !== '/admin' || profile?.role === 'admin').map(({path,title,note,icon:Icon}, i) => <Link key={path} className="desk-row" to={path}>
+      <div>{index.filter(item => item.path !== '/admin' || profile?.role === 'admin').map(({path,title,note,icon:Icon}, i) => <Link viewTransition key={path} className="desk-row" to={path}>
         <span className="desk-row-icon"><Icon size={20}/></span><div><h3>{title}</h3><p>{note}</p></div><span className="folio-number">0{i+1}</span><ArrowUpRight size={18}/>
       </Link>)}</div>
     </section><section className="record"><div className="desk-title"><span>02 / Record</span><h2>Practice log</h2></div>

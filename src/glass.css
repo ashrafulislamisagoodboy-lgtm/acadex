@@ -186,3 +186,28 @@ body { background: #1c2a47; }
 .calendar-import__file:hover { background:#ebf3fb; }
 #calendar-upload:focus-visible + label { outline:3px solid #245ba1; outline-offset:3px; }
 .calendar-import .btn-primary:disabled { opacity:1; color:#35465a; background:#dfe6ed; }
+
+/* Shuffle real page snapshots, not the wallpaper or controls. Browsers without
+   view transitions keep the ordinary page settle. No duplicated live forms. */
+@media (prefers-reduced-motion:no-preference) {
+  :root:has(.app-shell) { view-transition-name:none; }
+  .route-stage { view-transition-name:workspace-card; }
+  ::view-transition { pointer-events:none; }
+  ::view-transition-group(workspace-card) { animation-duration:380ms; animation-timing-function:cubic-bezier(.2,.75,.25,1); }
+  ::view-transition-image-pair(workspace-card) { isolation:isolate; perspective:1200px; }
+  ::view-transition-old(workspace-card), ::view-transition-new(workspace-card) {
+    mix-blend-mode:normal; transform-origin:50% 5rem; object-fit:cover; object-position:top;
+    border-radius:24px; animation:deck-retire 380ms cubic-bezier(.18,.76,.25,1) both;
+  }
+  ::view-transition-new(workspace-card) { animation-name:deck-deal; }
+  :root[data-shuffle='back']::view-transition-old(workspace-card) { z-index:1; animation-name:deck-withdraw; }
+  :root[data-shuffle='back']::view-transition-new(workspace-card) { animation-name:deck-return; }
+  @keyframes deck-retire { to { transform:translateX(-5%) rotateY(6deg) rotateZ(-2deg) scale(.93); opacity:0; } }
+  @keyframes deck-deal { from { transform:translate(22%,14px) rotateY(-8deg) rotateZ(3deg) scale(.97); opacity:.16; } 55% { opacity:1; } }
+  @keyframes deck-withdraw { to { transform:translate(22%,14px) rotateY(-8deg) rotateZ(3deg) scale(.97); opacity:0; } }
+  @keyframes deck-return { from { transform:translateX(-5%) rotateY(6deg) rotateZ(-2deg) scale(.93); opacity:.5; } }
+}
+@media (prefers-reduced-motion:reduce) {
+  :root { view-transition-name:none; }
+  ::view-transition { pointer-events:none; }
+}
