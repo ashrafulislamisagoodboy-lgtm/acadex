@@ -10,3 +10,30 @@
 .passport-index { display:flex; align-items:center; gap:.5rem 1.1rem; flex-wrap:wrap; margin:1rem 0; padding:.55rem 1rem; border-radius:16px; background:#ecf3ecf5; }.passport-index a { min-height:44px; display:inline-flex; align-items:center; font-size:.86rem; font-weight:700; }.passport-index a:hover { text-decoration:underline; }.passport-page.card { padding:clamp(1rem,3vw,1.8rem); scroll-margin-top:6rem; overflow-wrap:anywhere; }.passport-page input { min-width:0; }.passport-page [class~='text-forest/40'] { color:#536864; }.passport-stamp { display:inline-flex; align-items:center; gap:.45rem; padding:.55rem .85rem; color:#29574a; border:2px dashed #628177; border-radius:8px; background:#e0eddf; font-weight:700; }
 @media(max-width:600px) { .passport-camera > span { display:none; }.passport-details { gap:.85rem; }.passport-name { flex-basis:calc(100% - 100px); }.passport-ledger { grid-template-columns:repeat(2,minmax(0,1fr)); }.passport-index >span { flex-basis:100%; }.passport-index { gap:.2rem .75rem; }.passport-index a { font-size:.79rem; } }
 @media(prefers-reduced-transparency:reduce), (prefers-contrast:more) { .passport-index { background:#ecf3ec; } }
+
+/* Laminate the passport, not its QR code, form fields or dialogs. The base
+   materials above stay opaque when the visitor prefers a solid surface. */
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))) {
+  @media not (prefers-reduced-transparency:reduce) {
+    @media not (prefers-contrast:more) {
+      .passport-cover,.passport-page.card,.passport-index {
+        border:1px solid #ffffffe0;
+        box-shadow:inset 0 1px 0 #fff, inset 0 -1px 0 #a7d4d278, 0 10px 26px -18px #0f3d45aa;
+      }
+      .passport-cover,.passport-index {
+        background:linear-gradient(125deg,#ffffffb3,transparent 43%,#b9dfdb40),rgb(235 247 244 / .74);
+        -webkit-backdrop-filter:blur(5px); backdrop-filter:blur(5px);
+      }
+      .passport-banner::after {
+        content:''; position:absolute; inset:0; pointer-events:none;
+        background:linear-gradient(114deg,transparent 30%,#ffffff12 42%,#ffffff28 43%,transparent 56%);
+        box-shadow:inset 0 -1px 0 #ffffff8c;
+      }
+      .passport-banner :is(.passport-imprint,.passport-camera) { z-index:1; }
+      .passport-photo { box-shadow:0 0 0 3px #ffffffaf,0 4px 12px #24484035; }
+      .passport-ledger { background:#86a99a40; border-top-color:#597c716b; }
+      .passport-ledger > div { background:#f0f7edaa; }
+      .passport-page.card { background:linear-gradient(135deg,#ffffff5c,transparent 44%),rgb(245 250 247 / .89); -webkit-backdrop-filter:none; backdrop-filter:none; }
+    }
+  }
+}
