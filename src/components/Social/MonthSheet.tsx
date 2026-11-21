@@ -29,6 +29,7 @@ export default function MonthSheet({year, month, events, onMove, onBack}: {
   const still = useReducedMotion();
   const heading = useRef<HTMLHeadingElement>(null);
   const [selected,setSelected] = useState<number | null>(null);
+  const [eventIndex,setEventIndex] = useState(0);
   useLayoutEffect(() => { heading.current?.focus({preventScroll:true}); }, []);
   const first = new Date(year,month,1), last = new Date(year,month+1,0), today = new Date();
   const entries = eventsInRange(events,first,last);
@@ -37,6 +38,8 @@ export default function MonthSheet({year, month, events, onMove, onBack}: {
     return {date, items:eventsInRange(entries,date,date)};
   });
   const picked = selected === null ? null : days[selected-1];
+  const index = Math.min(eventIndex, Math.max(0, (picked?.items.length ?? 0) - 1));
+  const event = picked?.items[index];
   return <motion.section className="month-sheet" aria-labelledby="month-title" layoutId={still ? undefined : `month-${year}-${month}`} transition={{duration:.32,ease:[.2,.75,.25,1]}}>
     <header><div><button className="year-return" onClick={onBack}><Grid2X2 size={16}/> Year grid</button><h2 id="month-title" ref={heading} tabIndex={-1}>{first.toLocaleDateString(undefined,{month:'long',year:'numeric'})}</h2></div>
       <div className="sheet-arrows"><button aria-label="Previous month" onClick={()=>onMove(-1)}><ChevronLeft/></button><button aria-label="Next month" onClick={()=>onMove(1)}><ChevronRight/></button></div></header>
@@ -44,10 +47,18 @@ export default function MonthSheet({year, month, events, onMove, onBack}: {
     <div className="sheet-grid">
       {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=><span className="sheet-weekday" key={d}>{d}</span>)}
       {Array.from({length:first.getDay()},(_,i)=><span key={`empty-${i}`} aria-hidden="true"/>)}
-      {days.map(({date,items})=><button key={date.getDate()} className="sheet-day" data-event={!!items.length} aria-pressed={selected===date.getDate()} aria-current={date.toDateString()===today.toDateString()?'date':undefined} aria-label={`${date.toLocaleDateString(undefined,{dateStyle:'full'})}, ${items.length} ${items.length===1?'event':'events'}`} onClick={()=>setSelected(date.getDate())}>
+      {days.map(({date,items})=><button key={date.getDate()} className="sheet-day" data-event={!!items.length} aria-pressed={selected===date.getDate()} aria-current={date.toDateString()===today.toDateString()?'date':undefined} aria-label={`${date.toLocaleDateString(undefined,{dateStyle:'full'})}, ${items.length} ${items.length===1?'event':'events'}`} onClick={()=>{ setSelected(date.getDate()); setEventIndex(0); }}>
         <b>{date.getDate()}</b>{!!items.length && <><span className="sheet-mark" aria-hidden="true"/><small>{items[0].title}{items.length>1 && ` +${items.length-1}`}</small></>}
       </button>)}
     </div>
-    <div className="sheet-detail" aria-live="polite">{picked ? <><h3>{picked.date.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'})}</h3>{picked.items.length ? <ul>{picked.items.map(event=><li key={event.id}><strong>{event.title}</strong><span>{event.time || 'All day'}{event.location && ` · ${event.location}`}</span></li>)}</ul> : <p>No events scheduled for this day.</p>}</> : <p>{entries.length ? `${entries.length} scheduled ${entries.length===1?'event':'events'} this month.` : 'No events scheduled this month.'}</p>}</div>
+    <div className="sheet-detail" aria-live="polite">{picked ? <>
+      <h3>{picked.date.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'})}</h3>
+      {event ? <><strong>{event.title}</strong><p>{event.time || 'All day'}{event.location && ` · ${event.location}`}</p>
+        {picked.items.length > 1 && <div className="event-pager">
+          <button aria-label="Previous event" disabled={!index} onClick={()=>setEventIndex(index-1)}><ChevronLeft size={16}/></button>
+          <span>{index+1} of {picked.items.length}</span>
+          <button aria-label="Next event" disabled={index===picked.items.length-1} onClick={()=>setEventIndex(index+1)}><ChevronRight size={16}/></button>
+        </div>}</> : <p>No events scheduled for this day.</p>}
+    </> : <p>{entries.length ? `${entries.length} scheduled ${entries.length===1?'event':'events'} this month.` : 'No events scheduled this month.'}</p>}</div>
   </motion.section>;
 }
