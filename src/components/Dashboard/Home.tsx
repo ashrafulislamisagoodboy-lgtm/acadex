@@ -4,6 +4,7 @@ import { ArrowRight, ArrowUpRight, CalendarDays, Crown, Fingerprint, LibraryBig,
 import { auth, db, doc, onSnapshot } from '../../lib/local';
 import FieldAtlas from '../Common/FieldAtlas';
 import DailySpark from './DailySpark';
+import FocusPass from './FocusPass';
 import './studio.css';
 
 type RecordData = { name?: string; xp?: number; totalQuizzesPlayed?: number; totalQuestionsAttended?: number; role?: string };
@@ -33,6 +34,7 @@ export default function Home() {
         <p className="flight-deck">Hi {name}. Pick a chapter you’re curious about. Start with one question and see where it takes you.</p>
         <div className="flight-actions"><Link to="/quiz"><LibraryBig size={18}/> Start a quiz <ArrowRight size={17}/></Link><a href="#daily-spark">Try the warm-up ↓</a></div>
       </div>
+      {uid && <FocusPass key={uid} uid={uid} />}
     </section>
     <div className="studio-pair"><DailySpark key={today.toDateString()} day={today.getDay()}/>
       <section className="studio-panel momentum"><div className="studio-label"><TrendingUp size={17}/> Your momentum</div>

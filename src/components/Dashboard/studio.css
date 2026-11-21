@@ -10,3 +10,22 @@
 @media(max-width:760px) { .studio-pair,.studio-lower { grid-template-columns:1fr; }.flight-copy { width:68%; }.flight-hero::before { background:linear-gradient(90deg,#0b1c2eee,#10233272 65%,transparent); } }
 @media(max-width:540px) { .flight-copy { width:100%;padding:1.4rem 1.05rem 1.2rem; }.flight-hero { padding-top:clamp(105px,31vw,155px); }.flight-hero>img { height:67%;object-position:right top; }.flight-hero::before { background:linear-gradient(0deg,#102330 37%,#102330ee 49%,#10233044 70%,transparent 90%); }.studio-mast { font-size:.62rem; }.flight-studio .flight-hero h1 { margin:.6rem 0; }.flight-actions { margin-top:.8rem; }.studio-pair,.studio-lower { gap:.75rem;margin-top:.75rem; } }
 @media(prefers-reduced-transparency:reduce),(prefers-contrast:more) { .studio-mast { background:var(--paper); } }
+
+/* A boarding pass sits on the book cover; only its small lens needs live blur. */
+.focus-pass { display:flex; align-items:stretch; position:absolute; right:clamp(1rem,2vw,2rem); bottom:1.1rem; width:min(31%,280px); border:1px solid #d2f1e9a8; border-radius:15px; background:#193c43; color:#fff9e7; box-shadow:inset 0 1px #fff6,0 8px 22px #08172855; }
+.focus-stub { display:flex; flex-direction:column; align-items:center; justify-content:space-between; gap:.5rem; border-right:1px dashed #d1e4db80; padding:.85rem .55rem; color:#ffe2a4; }.focus-stub span { writing-mode:vertical-rl; font:650 .59rem var(--mono); letter-spacing:.22em; }
+.focus-body { flex:1;min-width:0;padding:.6rem .85rem; }.focus-head,.focus-controls,.focus-controls button { display:flex; align-items:center; gap:.45rem; }.focus-head { justify-content:space-between; }.focus-head span { font:700 .67rem var(--mono); text-transform:uppercase; letter-spacing:.12em; color:#ffdf9f; }.focus-head strong { font:650 1.45rem var(--ui); font-variant-numeric:tabular-nums; }.focus-body p { font-size:.77rem;color:#e2eee8; }.focus-controls button { min-height:36px; font-size:.81rem; font-weight:700; }.focus-controls button+button { margin-left:auto; justify-content:center; min-width:36px; }.focus-controls button:focus-visible { outline:2px solid #ffdc96; }
+@media(max-width:840px) { .focus-pass { position:relative; inset:auto; margin:0 1rem 1rem; width:min(310px,calc(100% - 2rem)); }.focus-controls button { min-height:44px; } }
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))) {
+  @media not (prefers-reduced-transparency:reduce) {
+    @media not (prefers-contrast:more) {
+      .flight-studio .studio-mast,.flight-studio .studio-panel,.flight-studio .flight-hero { border:1px solid #ffffffbb; box-shadow:inset 0 1px 0 #ffffffe0,inset 0 -1px 0 #ade6e08c,0 9px 26px -17px #122b3fb3; }
+      .studio-mast { background:linear-gradient(110deg,#ffffffad,#dafff230),#e3f0e4ac; }
+      .studio-panel { background:linear-gradient(125deg,#ffffffe3,#f4faf2b8 50%,#e0f3e9cb); }
+      .spark-card { background:linear-gradient(123deg,#fff7dcf2,#fff3dbc7 65%,#daf2e4bf); }
+      .momentum { background:linear-gradient(120deg,#122f3fec,#1a4b50e6 64%,#275454cf); }
+      .focus-pass { background:linear-gradient(119deg,#ffffff30,transparent 34%,#d6ffef12 72%),#102e39b8; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+      .flight-hero::after { content:'';position:absolute;inset:0;pointer-events:none;z-index:-1;background:linear-gradient(112deg,transparent 49%,#d8fff013 50%,#e6fff904 56%,transparent 61%); }
+    }
+  }
+}
