@@ -192,3 +192,23 @@ body { background: #1c2a47; }
 .calendar-import__file:hover { background:#ebf3fb; }
 #calendar-upload:focus-visible + label { outline:3px solid #245ba1; outline-offset:3px; }
 .calendar-import .btn-primary:disabled { opacity:1; color:#35465a; background:#dfe6ed; }
+
+/* Preserve the full imported text, even for scientific terms with no spaces. */
+[data-page='/quiz'] :is(.chapter-heading h1,.card h3,.question-sheet,.practice-rule,.answer-line) { overflow-wrap:anywhere; }
+.chapter-choice,.chapter-choice > div:first-child,.chapter-choice .text-left,.answer-line > span { min-width:0; }
+.chapter-choice > div:last-child,.answer-letter { flex-shrink:0; }
+@media(max-width:480px) {
+  .chapter-choice { padding:1rem; gap:.45rem; }
+  .chapter-choice > div:first-child { gap:.65rem; }
+  .chapter-choice > div:first-child > div:first-child { width:2rem; flex-shrink:0; }
+}
+/* Dialog overlays live outside route animations and the dock's stacking context. */
+html:has(.viewport-layer) { overflow:hidden; }
+.viewport-layer > div { max-height:calc(100dvh - 2rem); overflow-y:auto; overscroll-behavior:contain; overflow-wrap:anywhere; }
+.viewport-layer .glass-card-dark { background-color:#243640; }
+.viewport-layer .glass-card { background-color:#f0f5f2; }
+.viewport-layer svg[height='200'] { width:min(200px,100%); height:auto; }
+@media(max-height:500px),(max-width:450px) {
+  .viewport-layer { padding:1rem; }
+  .viewport-layer > div { padding:1rem; }
+}

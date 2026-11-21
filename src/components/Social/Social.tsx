@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import React, { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, Bell, Clock, MapPin, Plus, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, getDoc } from '../../lib/local';
@@ -329,7 +330,7 @@ export default function Social() {
       </MonthOverlay>}
 
       {/* Add Event Modal */}
-      {showModal && (
+      {showModal && createPortal(
         <div className="calendar-form-layer fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <div className="glass-card-dark border rounded-3xl p-6 w-full max-w-md" role="dialog" aria-modal="true" aria-labelledby="event-dialog-title">
             <div className="flex justify-between items-center mb-6">
@@ -407,7 +408,7 @@ export default function Social() {
               </button>
             </form>
           </div>
-        </div>
+        </div>, document.body
       )}
     </div>
   );

@@ -15,3 +15,12 @@
 .office-account { display:flex; align-items:center; flex-wrap:wrap; gap:.65rem; padding:.9rem 0 0; border-top:1px solid #cbd8ce; }.office-account .office-initial { display:grid; place-items:center; width:38px; height:38px; background:#dbe9df; border-radius:12px; font-weight:750; }.office-identity { flex:1 1 9rem; min-width:0; overflow-wrap:anywhere; }.office-identity > * { display:block; }.office-identity span { font-size:.8rem; color:var(--office-muted); }.office-identity small { font-weight:700; color:#346659; }.office-account button { min-height:44px; min-width:44px; display:grid; place-items:center; }.office-content :focus-visible,.office-index :focus-visible { outline:2px solid #246b59; outline-offset:2px; }
 @media(max-width:799px) { .office-layout { grid-template-columns:minmax(0,1fr); gap:.65rem; }.office-index .office-tabs { display:none; }.office-index { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem 1rem; }.office-index >span { margin:0; }.office-index select { display:block; flex:1 1 165px; min-width:0; border:1px solid #92ada0; background:white; border-radius:10px; padding:.65rem; min-height:44px; font-weight:650; }.office-files { width:90px; height:70px; }.office-files i:last-child { padding:.5rem; } }
 @media(max-width:560px) { .office-files { display:none; }.office-field-pair { grid-template-columns:minmax(0,1fr); }.office-layout { margin-top:.65rem; }.office-content .input-field { min-width:0; }.office-content .office-form label { overflow-wrap:anywhere; } }
+.office-bank { overflow-wrap:anywhere; }
+.office-bank .flex > :is(div,h4,h5,span) { min-width:0; }
+.office-bank :is(button,svg) { flex-shrink:0; }
+@media(max-width:500px) {
+  .office-bank .ml-6 { margin-left:.4rem; }
+  .office-bank .grid-cols-2 { grid-template-columns:minmax(0,1fr); }
+  .office-bank .bank-path { display:grid; gap:.1rem; }
+  .office-bank .bank-path span:nth-child(2) { display:none; }
+}

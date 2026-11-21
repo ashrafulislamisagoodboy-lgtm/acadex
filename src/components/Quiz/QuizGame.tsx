@@ -4,6 +4,10 @@ import { Trophy, Star, CheckCircle, XCircle, AlertCircle, Timer, Book, ChevronRi
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../lib/utils';
 
+function countLabel(count: number, noun: string) {
+  return `${count} ${noun}${count === 1 ? '' : 's'}`;
+}
+
 export default function QuizGame() {
   const [allQuestions, setAllQuestions] = useState<any[]>([]);
   const [questions, setQuestions] = useState<any[]>([]);
@@ -138,10 +142,10 @@ export default function QuizGame() {
                     <div className="w-20 h-20 bg-forest/5 rounded-3xl flex items-center justify-center text-forest group-hover:bg-forest group-hover:text-butter transition-all shadow-inner">
                       <Book size={40} strokeWidth={2.5} />
                     </div>
-                    <div className="text-center space-y-1">
+                    <div className="max-w-full text-center space-y-1">
                       <h3 className="text-xl font-black text-forest group-hover:text-forest transition-all uppercase tracking-tight">{subject}</h3>
-                      <p className="text-[11px] font-black text-forest/40 uppercase tracking-widest">
-                        {allQuestions.filter(q => q.subject === subject).length} Questions Available
+                      <p className="text-[11px] font-black text-slate-700 uppercase tracking-widest">
+                        {countLabel(allQuestions.filter(q => q.subject === subject).length, 'Question')} available
                       </p>
                     </div>
                   </motion.button>
@@ -166,10 +170,9 @@ export default function QuizGame() {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: idx * 0.05 }}
-                      whileHover={{ x: 10 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => void startQuiz(chapter)}
-                      className="card p-6 flex items-center justify-between hover:border-forest transition-all group bg-butter border-2 border-forest/10 shadow-lg shadow-black/10"
+                      className="chapter-choice card p-6 flex items-center justify-between hover:border-forest transition-all group bg-butter border-2 border-forest/10 shadow-lg shadow-black/10"
                     >
                       <div className="flex items-center gap-5">
                         <div className="w-14 h-14 bg-forest/5 rounded-2xl flex items-center justify-center text-forest group-hover:bg-forest group-hover:text-butter transition-all shadow-inner">
@@ -177,8 +180,8 @@ export default function QuizGame() {
                         </div>
                         <div className="text-left">
                           <h3 className="text-lg font-black text-forest group-hover:text-forest transition-all tracking-tight">{chapter}</h3>
-                          <p className="text-[11px] font-black text-forest/40 uppercase tracking-widest">
-                            {allQuestions.filter(q => q.subject === selectedSubject && q.chapter === chapter).length} Challenges
+                          <p className="text-[11px] font-black text-slate-700 uppercase tracking-widest">
+                            {countLabel(allQuestions.filter(q => q.subject === selectedSubject && q.chapter === chapter).length, 'Challenge')}
                           </p>
                         </div>
                       </div>
@@ -224,12 +227,12 @@ export default function QuizGame() {
           <h2 className="text-3xl font-black text-butter">Round complete</h2>
           <div className="card w-full p-6 space-y-4 bg-butter border-forest/10">
             <div className="flex justify-between items-center">
-              <span className="text-forest/40 font-bold uppercase text-xs tracking-widest">XP Gained</span>
+              <span className="text-slate-700 font-bold uppercase text-xs tracking-widest">XP Gained</span>
               <span className="text-2xl font-black text-green-600">+{xpGained}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-forest/40 font-bold uppercase text-xs tracking-widest">XP Lost</span>
-              <span className="text-2xl font-black text-red-600">-{xpLost}</span>
+              <span className="text-slate-700 font-bold uppercase text-xs tracking-widest">XP Lost</span>
+              <span className={cn('text-2xl font-black', xpLost ? 'text-red-700' : 'text-forest')}>{xpLost ? `−${xpLost}` : '0'}</span>
             </div>
             <div className="pt-4 border-t border-forest/10 flex justify-between items-center">
               <span className="text-forest font-black uppercase text-sm tracking-widest">Net Result</span>
@@ -239,7 +242,7 @@ export default function QuizGame() {
 
           {/* Question Summary */}
           <div className="w-full space-y-3">
-            <p className="text-xs font-black uppercase text-butter/40 tracking-widest text-left">Quiz Summary</p>
+            <p className="text-xs font-black uppercase text-butter tracking-widest text-left">Quiz Summary</p>
             <div className="flex flex-wrap gap-2 justify-center">
               {quizResults.map((res, i) => (
                 <div 

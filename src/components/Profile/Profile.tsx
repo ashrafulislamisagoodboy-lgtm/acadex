@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import './passport.css';
 import { readFileUrl } from '../../lib/imports';
 import React, { useState, useEffect } from 'react';
@@ -508,12 +509,13 @@ function ProfileView({ uid }: { uid: string }) {
         )}
       </div>
 
+      {createPortal(<>
       {showQR && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] flex items-center justify-center p-8">
+        <div className="viewport-layer fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] flex items-center justify-center p-8">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="glass-card-dark rounded-3xl p-8 w-full max-w-xs text-center space-y-6 border"
+            className="profile-qr-panel glass-card-dark rounded-3xl p-8 w-full max-w-xs text-center space-y-6 border"
           >
             <h3 className="text-xl font-bold text-butter">Profile QR</h3>
             <div className="bg-white p-6 rounded-2xl flex justify-center">
@@ -527,7 +529,7 @@ function ProfileView({ uid }: { uid: string }) {
       )}
 
       {showScanner && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] flex flex-col items-center justify-center p-8">
+        <div className="viewport-layer fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] flex flex-col items-center justify-center p-8">
           <div className="glass-card-dark rounded-3xl p-6 w-full max-w-sm space-y-4 border">
             <h3 className="text-xl font-bold text-butter text-center">Scan Profile QR</h3>
             <div id="reader" className="overflow-hidden rounded-2xl border-2 border-white/10"></div>
@@ -541,7 +543,7 @@ function ProfileView({ uid }: { uid: string }) {
       {/* Image Preview Modal */}
       <AnimatePresence>
         {previewImage && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[60] flex items-center justify-center p-6">
+          <div className="viewport-layer fixed inset-0 bg-black/80 backdrop-blur-md z-[60] flex items-center justify-center p-6">
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -579,6 +581,7 @@ function ProfileView({ uid }: { uid: string }) {
           </div>
         )}
       </AnimatePresence>
+      </>, document.body)}
     </div>
   );
 }

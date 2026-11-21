@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { readFileUrl, newStudentRows } from '../../lib/imports';
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc, arrayUnion, query, where, setDoc, getDoc, writeBatch, getDocsFromServer } from '../../lib/local';
@@ -525,10 +526,11 @@ export default function AdminPanel() {
   const matches = users.filter(user => [user.name, user.username, user.grade].some(value => String(value ?? '').toLowerCase().includes(term)));
   return (
     <div className="office-workspace">
+      {createPortal(<>
       {/* Review Questions Modal */}
       <AnimatePresence>
         {reviewQuestions && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
+          <div className="viewport-layer fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -608,7 +610,7 @@ export default function AdminPanel() {
       {/* Review Students Modal */}
       <AnimatePresence>
         {reviewStudents && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
+          <div className="viewport-layer fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -668,7 +670,7 @@ export default function AdminPanel() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6"
+            className="viewport-layer fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6"
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -715,6 +717,7 @@ export default function AdminPanel() {
         )}
       </AnimatePresence>
 
+      </>, document.body)}
       <header className="office-mast">
         <div><span className="office-eyebrow"><Shield size={14} /> Acadex / Administration</span>
           <h1>School office<span>.</span></h1><p>Manage learner access, teaching materials and school events.</p></div>
@@ -819,7 +822,7 @@ export default function AdminPanel() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {Array.from(new Set(questions.map(q => q.subject || 'Uncategorized'))).sort().map(subject => (
-                    <div key={subject} className="group flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-gray-100 shadow-sm hover:border-forest transition-all">
+                    <div key={subject} className="max-w-full [overflow-wrap:anywhere] group flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-gray-100 shadow-sm hover:border-forest transition-all">
                       <span className="font-bold text-xs text-gray-600">{subject}</span>
                       <button
                         onClick={() => setConfirmDelete({ id: subject, type: 'category', subType: 'subject' })}
@@ -840,7 +843,7 @@ export default function AdminPanel() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {Array.from(new Set(questions.map(q => q.chapter).filter(Boolean))).map(chapter => (
-                    <div key={chapter} className="group flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-gray-100 shadow-sm hover:border-forest transition-all">
+                    <div key={chapter} className="max-w-full [overflow-wrap:anywhere] group flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-gray-100 shadow-sm hover:border-forest transition-all">
                       <span className="font-bold text-xs text-gray-600">{chapter}</span>
                       <button
                         onClick={() => setConfirmDelete({ id: chapter, type: 'category', subType: 'chapter' })}
@@ -907,7 +910,7 @@ export default function AdminPanel() {
             </div>
 
             {/* Question List */}
-            <div className="space-y-6">
+            <div className="office-bank space-y-6">
               <div className="flex items-center justify-between px-2">
                 <h3 className="font-black text-forest uppercase tracking-tight">Question Bank</h3>
                 <div className="h-px flex-1 bg-gray-100 mx-4"></div>
@@ -963,7 +966,7 @@ export default function AdminPanel() {
                               className="card p-5 flex flex-col sm:flex-row justify-between items-start gap-4 hover:border-forest/30 transition-all group"
                             >
                               <div className="flex-1 w-full">
-                                <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                                <div className="bank-path flex flex-wrap items-center gap-2 text-[11px] font-bold text-slate-600 uppercase tracking-widest mb-1">
                                   <span className="text-forest">Book: {q.subject}</span>
                                   <span>•</span>
                                   <span>Chapter: {q.chapter}</span>
@@ -975,7 +978,7 @@ export default function AdminPanel() {
                                       "text-[11px] px-3 py-2 rounded-xl border flex items-center justify-between",
                                       idx === q.correctIndex ? "bg-green-50 border-green-200 text-green-700 font-bold" : "bg-gray-50/50 border-gray-100 text-gray-500"
                                     )}>
-                                      <span className="truncate">{opt}</span>
+                                      <span>{opt}</span>
                                       {idx === q.correctIndex && <CheckCircle size={10} />}
                                     </div>
                                   ))}
