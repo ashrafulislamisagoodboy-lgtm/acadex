@@ -3,11 +3,11 @@ import { Calendar as CalendarIcon, Bell, Clock, MapPin, Plus, X, ChevronLeft, Ch
 import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, getDoc } from '../../lib/local';
 import { db, auth } from '../../lib/local';
 
-import MonthSheet from './MonthSheet';
+import MonthSheet, { MonthOverlay } from './MonthSheet';
 import { motion, useReducedMotion } from 'motion/react';
 import { eventsInRange, localMidnight } from '../../lib/calendar';
 
-const MonthCard = ({ year, month, isSelected, onClick }: { year: number, month: number, isSelected: boolean, onClick: () => void }) => {
+const MonthCard = ({ year, month, isSelected, onClick }: { year: number, month: number, isSelected: boolean, onClick: React.MouseEventHandler<HTMLButtonElement> }) => {
   const still = useReducedMotion();
   const monthDate = new Date(year, month, 1);
   const monthName = monthDate.toLocaleString('default', { month: 'long' });
@@ -63,7 +63,13 @@ export default function Social() {
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'agenda' | 'month'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'agenda'>('grid');
+  const [expanded, setExpanded] = useState(false);
+  const opener = React.useRef<HTMLButtonElement | null>(null);
+  const closeMonth = () => {
+    setExpanded(false);
+    requestAnimationFrame(() => opener.current?.focus({preventScroll:true}));
+  };
   const [monthDate, setMonthDate] = useState(() => new Date());
   const selectedMonth = monthDate.getMonth();
   const [dayFilter, setDayFilter] = useState<'today' | 'tomorrow' | 'all'>('all');
@@ -191,14 +197,10 @@ export default function Social() {
               year={currentYear} 
               month={i} 
               isSelected={selectedMonth === i}
-              onClick={() => { handleMonthClick(i); setViewMode('month'); }}
+              onClick={event => { opener.current = event.currentTarget; handleMonthClick(i); setExpanded(true); }}
             />
           ))}
         </div>
-      ) : viewMode === 'month' ? (
-        <MonthSheet key={`${currentYear}-${selectedMonth}`} year={currentYear} month={selectedMonth} events={events} onMove={delta=>handleMonthClick(selectedMonth+delta)} onBack={()=>{
-          setViewMode('grid'); requestAnimationFrame(()=>document.getElementById(`month-card-${selectedMonth}`)?.focus());
-        }} />
       ) : (
         /* Agenda View */
         <div className="space-y-8 max-w-3xl mx-auto">
@@ -327,6 +329,11 @@ export default function Social() {
           </div>
         </div>
       )}
+
+      {expanded && <MonthOverlay onDismiss={closeMonth}>
+        <MonthSheet key={`${currentYear}-${selectedMonth}`} year={currentYear} month={selectedMonth} events={events}
+          onMove={delta=>handleMonthClick(selectedMonth+delta)} onBack={closeMonth} />
+      </MonthOverlay>}
 
       {/* Add Event Modal */}
       {showModal && (

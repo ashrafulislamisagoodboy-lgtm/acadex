@@ -5,13 +5,31 @@ import { eventsInRange } from '../../lib/calendar';
 import './month-sheet.css';
 
 type SchoolEvent = {id:string; title:string; startDate:string; endDate?:string; time?:string; location?:string};
+// The native modal keeps focus inside and makes the grid beneath it inert.
+// Its transparent, viewport-sized surface is the outside-click target.
+export function MonthOverlay({ children, onDismiss }: { children: React.ReactNode; onDismiss: () => void }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [ready,setReady] = useState(false);
+  useLayoutEffect(() => {
+    const element = dialog.current!;
+    element.showModal();
+    setReady(true);
+    return () => element.close();
+  }, []);
+  return <dialog ref={dialog} className="month-overlay" aria-labelledby="month-title"
+    onCancel={event => { event.preventDefault(); onDismiss(); }}
+    onClick={event => { if (event.target === event.currentTarget) onDismiss(); }}>
+    {ready && children}
+  </dialog>;
+}
+
 export default function MonthSheet({year, month, events, onMove, onBack}: {
   year:number; month:number; events:SchoolEvent[]; onMove:(direction:number)=>void; onBack:()=>void;
 }) {
   const still = useReducedMotion();
   const heading = useRef<HTMLHeadingElement>(null);
   const [selected,setSelected] = useState<number | null>(null);
-  useLayoutEffect(() => { heading.current?.focus(); }, []);
+  useLayoutEffect(() => { heading.current?.focus({preventScroll:true}); }, []);
   const first = new Date(year,month,1), last = new Date(year,month+1,0), today = new Date();
   const entries = eventsInRange(events,first,last);
   const days = Array.from({length:last.getDate()}, (_,i) => {
