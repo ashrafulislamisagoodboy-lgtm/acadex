@@ -50,6 +50,9 @@ export default function LiveWallpaper({ children }: { children: ReactNode }) {
     <div className="live-wallpaper" aria-hidden="true" data-paused={paused || hidden}>
       <div className="meadow-scene">
         <MeadowWind paused={paused || hidden} />
+        <span className="meadow-cloud meadow-cloud--wisp" />
+        <span className="meadow-cloud meadow-cloud--horizon" />
+        <span className="meadow-cloud meadow-cloud--puff" />
         <span className="meadow-cloud meadow-cloud--far" />
         <span className="meadow-cloud meadow-cloud--near" />
         <span className="meadow-grass meadow-grass--far" />

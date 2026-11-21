@@ -45,10 +45,16 @@ body { background: #1c2a47; }
 .meadow-cloud { position:absolute; left:0; aspect-ratio:488/164; background:url('/meadow-cloud.webp') center / contain no-repeat; }
 .meadow-cloud--far { width:clamp(110px,15vw,260px); top:18%; opacity:.58; transform:translateX(12vw) scaleX(-1); --cloud-facing:-1; }
 .meadow-cloud--near { width:clamp(160px,24vw,430px); top:5%; opacity:.82; transform:translateX(59vw); --cloud-facing:1; }
+.meadow-cloud--wisp { width:clamp(96px,18vw,290px); aspect-ratio:8; top:3%; opacity:.65; background-image:url('/meadow-wisp.webp'); transform:translateX(8vw); --cloud-facing:1; }
+.meadow-cloud--horizon { width:clamp(80px,13vw,210px); aspect-ratio:8; top:26%; opacity:.52; background-image:url('/meadow-wisp.webp'); transform:translateX(68vw) scaleX(-1); --cloud-facing:-1; }
+.meadow-cloud--puff { width:clamp(75px,10vw,155px); top:13%; opacity:.74; transform:translateX(42vw); --cloud-facing:1; }
 .meadow-grass { position:absolute; inset:auto -30px 0; background:url('/meadow-blades.webp') repeat-x left bottom / auto 100%; transform-origin:center bottom; }
 .meadow-grass--far { height:clamp(64px,12vh,130px); opacity:.72; background-position-x:147px; }
 .meadow-grass--near { height:clamp(84px,16vh,175px); }
 @media (prefers-reduced-motion:no-preference) {
+  .meadow-cloud--wisp { animation:cloud-drift 122s linear -25s infinite; }
+  .meadow-cloud--horizon { animation:cloud-drift 165s linear -125s infinite; }
+  .meadow-cloud--puff { animation:cloud-drift 109s linear -53s infinite; }
   .meadow-cloud--far { animation:cloud-drift 140s linear -45s infinite; }
   .meadow-cloud--near { animation:cloud-drift 95s linear -64s infinite; }
   .meadow-grass--far { animation:grass-breeze 4.9s ease-in-out -2s infinite alternate; }
