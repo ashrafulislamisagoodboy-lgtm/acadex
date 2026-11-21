@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Zap } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 const prompts = [
   ['Astronomy', 'Why do we see different phases of the Moon?', ['Earth casts a shadow every night', 'We see different parts of its sunlit half'], 1, 'The Sun lights half the Moon. As the Moon orbits Earth, our view of that half changes.'],
@@ -14,11 +14,11 @@ const prompts = [
 export default function DailySpark({ day }: { day: number }) {
   const [subject, question, options, correct, explanation] = prompts[day];
   const [answer, setAnswer] = useState<number | null>(null);
-  return <section className="studio-panel spark-card" id="daily-spark" aria-labelledby="spark-title" tabIndex={-1}>
-    <div className="studio-label"><Zap size={16} /> Daily spark <span>{subject}</span></div>
+  return <section className="spark-card" id="daily-spark" aria-labelledby="spark-title" tabIndex={-1}>
+    <div className="studio-label">Margin question <span>{subject}</span></div>
     <h2 id="spark-title">{question}</h2>
     <div className="spark-options">{options.map((option,i) => <button key={option} disabled={answer !== null} onClick={() => setAnswer(i)} data-correct={answer !== null && correct === i}>
       <b aria-hidden="true">{i ? 'B' : 'A'}</b>{option}{answer !== null && correct === i && <Check size={16} aria-hidden="true"/>}</button>)}</div>
-    <p className="spark-note" aria-live="polite">{answer === null ? 'A no-pressure warm-up. No XP at stake.' : `${answer === correct ? 'That’s right.' : 'Here’s the idea.'} ${explanation}`}</p>
+    <p className="spark-note" aria-live="polite">{answer === null ? 'A warm-up, not a test.' : `${answer === correct ? 'That’s right.' : 'Here’s the idea.'} ${explanation}`}</p>
   </section>;
 }

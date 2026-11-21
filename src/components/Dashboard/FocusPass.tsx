@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pause, Play, RotateCcw, Send } from 'lucide-react';
+import { Pause, Play, RotateCcw, Timer } from 'lucide-react';
 
 const duration = 10 * 60;
 type Flight = { end: number | null; remaining: number };
@@ -34,9 +34,9 @@ export default function FocusPass({ uid }: { uid: string }) {
     setFlight(running ? { end: null, remaining: Math.max(0,Math.ceil((flight.end! - time)/1000)) } : { end: time + (left || duration)*1000, remaining: left || duration });
   }
   return <section className="focus-pass" aria-label="Ten-minute focus timer">
-    <div className="focus-stub" aria-hidden="true"><Send size={18}/><span>PASS</span></div>
-    <div className="focus-body"><div className="focus-head"><span>Focus pass</span><strong role="timer" aria-label="Time remaining">{Math.floor(left/60)}:{String(left%60).padStart(2,'0')}</strong></div>
-      <p role="status">{running ? 'In session · one chapter' : !left ? 'Session complete. Take a breath.' : left < duration ? 'Paused · ready when you are' : 'Ten minutes. One chapter.'}</p>
+    <div className="focus-stub" aria-hidden="true"><Timer size={23}/></div>
+    <div className="focus-body"><div className="focus-head"><span>Study timer</span><strong role="timer" aria-label="Time remaining">{Math.floor(left/60)}:{String(left%60).padStart(2,'0')}</strong></div>
+      <p role="status">{running ? 'In session · one chapter' : !left ? 'Session complete. Take a breath.' : left < duration ? 'Paused · ready when you are' : 'Set aside ten minutes for one chapter.'}</p>
       <div className="focus-controls"><button onClick={toggle}>{running ? <Pause size={14}/> : <Play size={14}/>} {label}</button>{(running || left !== duration) && <button aria-label="Reset focus timer" onClick={()=>setFlight(fresh())}><RotateCcw size={15}/></button>}</div>
     </div>
   </section>;
