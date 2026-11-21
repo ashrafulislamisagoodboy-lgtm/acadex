@@ -149,7 +149,7 @@ body { background: #1c2a47; }
 .tab-turn { position:fixed; z-index:75; inset:0; display:grid; place-items:center; overflow:hidden; pointer-events:none; }
 .tab-turn__ripple {
   position:absolute; left:calc(50% + var(--to-x)); top:calc(50% + var(--to-y));
-  width:32vmax; aspect-ratio:1; translate:-50% -50%; border-radius:50%; opacity:0;
+  width:68px; aspect-ratio:1; translate:-50% -50%; border-radius:50%; opacity:0;
   background:radial-gradient(circle closest-side,transparent 82%,color-mix(in srgb,var(--turn-tint) 16%,transparent) 91%,#e6faff74 97%,transparent);
   border:1px solid #effaff9c;
 }
@@ -160,36 +160,44 @@ body { background: #1c2a47; }
 .tab-turn__back { transform:rotateY(180deg); background:var(--turn-tint); color:white; box-shadow:inset 0 1px 3px #fff8; }
 .tab-turn__title { font:700 .95rem/1 var(--ui); letter-spacing:-.025em; }
 
+/* A short arc of light connects the two tabs, like a reflection travelling
+   along the edge of a pane. The ripple starts only as the badge lands. */
+.tab-turn__track { position:absolute; inset:0; width:100%; height:100%; overflow:visible; fill:none; }
+.tab-turn__track path { stroke:var(--turn-tint); stroke-width:2; stroke-linecap:round; stroke-dasharray:1; }
+.tab-turn__lens { position:absolute; left:0; top:0; offset-path:var(--flight-path); offset-anchor:center; offset-rotate:0deg; background:var(--reading-pane); backdrop-filter:none; -webkit-backdrop-filter:none; }
 @media (prefers-reduced-motion:no-preference) {
-  .tab-turn__ripple { animation:tab-refraction 720ms cubic-bezier(.18,.62,.35,1) both; }
+  .tab-turn__track path { animation:light-trace 600ms ease-in-out both; }
+  .tab-turn__ripple { animation:tab-refraction 220ms 415ms ease-out both; }
   .tab-turn + .app-main .route-stage {
-    --sheet-start:min(45vw, 24rem);
-    animation:section-arrive 620ms cubic-bezier(.16,.84,.23,1) both;
+    --sheet-start:min(8vw, 5rem);
+    animation:section-arrive 360ms cubic-bezier(.18,.72,.25,1);
   }
-  .tab-turn[data-direction='back'] + .app-main .route-stage { --sheet-start:max(-45vw, -24rem); --page-angle:7deg; }
-  .tab-turn__lens { animation:turn-lens 810ms both; }
-  .tab-turn__coin { animation:turn-coin 380ms 140ms cubic-bezier(.22,.7,.16,1) both; }
-  .tab-turn__title { animation:turn-caption 200ms 185ms ease-out both; }
+  .tab-turn[data-direction='back'] + .app-main .route-stage { --sheet-start:max(-8vw, -5rem); }
+  .tab-turn__lens { animation:turn-lens 570ms cubic-bezier(.32,.04,.38,1) both; }
+  .tab-turn__coin { animation:turn-coin 300ms 55ms cubic-bezier(.22,.7,.16,1) both; }
+  .tab-turn__title { animation:turn-caption 140ms 65ms ease-out both; }
 }
 @keyframes turn-lens {
-  0% { opacity:0; transform:translate(var(--from-x),var(--from-y)) scale(.27); animation-timing-function:cubic-bezier(.14,.77,.25,1); }
-  8% { opacity:1; }
-  34%, 57% { opacity:1; transform:translate(0,0) scale(1); animation-timing-function:cubic-bezier(.6,.02,.83,.38); }
-  92% { opacity:.88; }
-  100% { opacity:0; transform:translate(var(--to-x),var(--to-y)) scale(.24); }
+  0% { offset-distance:0%; opacity:0; transform:scale(.4); }
+  16%, 77% { opacity:1; transform:scale(1); }
+  100% { offset-distance:100%; opacity:0; transform:scale(.38); }
+}
+@keyframes light-trace {
+  0% { stroke-dashoffset:1; opacity:0; }
+  24% { opacity:.7; }
+  78% { stroke-dashoffset:0; opacity:.55; }
+  100% { stroke-dashoffset:0; opacity:0; }
 }
 @keyframes turn-coin { to { transform:rotateY(calc(180deg * var(--turn-direction))); } }
 @keyframes turn-caption { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
 @media (prefers-reduced-motion:reduce) { .tab-turn { display:none; } }
-
 @keyframes section-arrive {
-  from { opacity:.18; transform:perspective(95rem) translateX(var(--sheet-start)) rotateY(var(--page-angle, -7deg)) scale(.95); }
+  from { opacity:.78; transform:translate3d(var(--sheet-start),4px,0); }
   to { opacity:1; transform:none; }
 }
 @keyframes tab-refraction {
-  0% { transform:scale(.05); opacity:0; }
-  18% { opacity:.85; }
-  100% { transform:scale(8); opacity:0; }
+  from { transform:scale(.35); opacity:.85; }
+  to { transform:scale(2); opacity:0; }
 }
 
 /* A readable inset for the calendar import instructions, even over dark hills. */
