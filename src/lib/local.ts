@@ -50,10 +50,14 @@ export const auth = {
   async signOut() { return signOut(auth); },
 };
 export function onAuthStateChanged(_auth: typeof auth, callback: (user: LocalUser | null) => void) {
-  listeners.add(callback);
+  let active = true;
   initialized ??= api('/auth/me').then(result => { acceptUser(result.user); }).catch(() => { acceptUser(null); });
-  initialized.then(() => { if (listeners.has(callback)) callback(auth.currentUser); });
-  return () => { listeners.delete(callback); };
+  initialized.then(() => {
+    if (!active) return;
+    listeners.add(callback);
+    callback(auth.currentUser);
+  });
+  return () => { active = false; listeners.delete(callback); };
 }
 export async function login(input: unknown, setup = false) {
   const result = await api(setup ? '/auth/setup' : '/auth/login', input);
@@ -70,7 +74,11 @@ function reference(kind: Ref['kind'], parent: { path: string }, segments: string
   return { kind, path: [parent.path, ...segments].filter(Boolean).join('/') };
 }
 export function collection(parent: { path: string }, ...segments: string[]) { return reference('collection', parent, segments); }
-export function doc(parent: { path: string }, ...segments: string[]) { return reference('document', parent, segments.length ? segments : [crypto.randomUUID()]); }
+function newRecordId() {
+  // HTTP on the school LAN has getRandomValues, but not the secure-context UUID API.
+  return crypto.randomUUID?.() ?? Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, '0')).join('');
+}
+export function doc(parent: { path: string }, ...segments: string[]) { return reference('document', parent, segments.length ? segments : [newRecordId()]); }
 export function where(field: string, operator: string, value: unknown) { return { type: 'where', field, operator, value }; }
 export function orderBy(field: string, direction = 'asc') { return { type: 'orderBy', field, direction }; }
 export function limit(count: number) { return { type: 'limit', count }; }
@@ -103,24 +111,28 @@ export function writeBatch(_db: typeof db) {
   };
 }
 export function onSnapshot(ref: Ref, callback: (value: any) => void, onError: (error: Error) => void = console.error) {
-  let active = true, pending = false, previous: string | undefined;
+  let active = true, pending = false, invalidated = false, previous: string | undefined;
   async function refresh() {
     if (!active || pending) return;
     pending = true;
     try {
       const raw = await api('/data/read', ref);
       const serialized = JSON.stringify(raw);
-      if (active && serialized !== previous) {
+      if (active && !invalidated && serialized !== previous) {
         previous = serialized;
         callback(ref.kind === 'document' ? snapshot(raw) : { docs: raw.docs.map(snapshot), empty: raw.docs.length === 0, size: raw.docs.length });
       }
-    } catch (error) { previous = undefined; if (active) onError(error as Error); }
-    finally { pending = false; }
+    } catch (error) { previous = undefined; if (active && !invalidated) onError(error as Error); }
+    finally {
+      pending = false;
+      if (active && invalidated) { invalidated = false; void refresh(); }
+    }
   }
   refresh();
   const timer = window.setInterval(refresh, 3000);
-  changes.addEventListener('change', refresh);
-  return () => { active = false; clearInterval(timer); changes.removeEventListener('change', refresh); };
+  const onChange = () => { if (pending) invalidated = true; else void refresh(); };
+  changes.addEventListener('change', onChange);
+  return () => { active = false; clearInterval(timer); changes.removeEventListener('change', onChange); };
 }
 export async function startLocalQuiz(subject: string, chapter: string) { return api('/quizzes', { subject, chapter }); }
 export async function answerLocalQuiz(id: string, index: number, optionIndex: number) {

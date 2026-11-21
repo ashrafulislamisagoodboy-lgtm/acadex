@@ -14,7 +14,15 @@ if (Test-Path -LiteralPath $archive) {
   Remove-Item -LiteralPath $archive -Force
 }
 
-Copy-Item -LiteralPath 'web-app' -Destination $packageFolder -Recurse
+# A build folder can also be a running installation. Ship generated assets,
+# never its database, environment, backups or other local configuration.
+New-Item -ItemType Directory -Path $packageFolder | Out-Null
+foreach ($item in @('dist', 'server', 'package.json', 'start-web.bat', 'start-web.sh', '.env.example', 'README.txt')) {
+  Copy-Item -LiteralPath (Join-Path 'web-app' $item) -Destination $packageFolder -Recurse
+}
+$dataFolder = Join-Path $packageFolder 'data'
+New-Item -ItemType Directory -Path $dataFolder | Out-Null
+Copy-Item -LiteralPath 'web-app/data/README.txt' -Destination $dataFolder
 Compress-Archive -LiteralPath $packageFolder -DestinationPath $archive -CompressionLevel Optimal
 
 Write-Host "Created $archive"

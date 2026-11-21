@@ -1,5 +1,5 @@
 import React, { lazy, Suspense, useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { onAuthStateChanged } from './lib/local';
 import { auth } from './lib/local';
 import Layout from './components/Layout';
@@ -12,6 +12,17 @@ const QuizGame = lazy(() => import('./components/Quiz/QuizGame'));
 const Profile = lazy(() => import('./components/Profile/Profile'));
 const AdminPanel = lazy(() => import('./components/Admin/AdminPanel'));
 const Social = lazy(() => import('./components/Social/Social'));
+
+function RequestLogin() {
+  const { pathname, search, hash } = useLocation();
+  return <Navigate replace to="/login" state={{ returnTo: { pathname, search, hash } }} />;
+}
+
+function AfterLogin() {
+  const { state } = useLocation();
+  const target = state?.returnTo;
+  return <Navigate replace to={target && /^\/(?:$|quiz$|leaderboard$|social$|admin$|profile\/[^/]+$)/.test(target.pathname) ? target : '/'} />;
+}
 
 function AppLoader() {
   return (
@@ -44,8 +55,8 @@ export default function App() {
       <BrowserRouter>
         <Suspense fallback={<AppLoader />}>
           <Routes>
-            <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
-            <Route path="/" element={user ? <Layout user={user} /> : <Navigate to="/login" />}>
+            <Route path="/login" element={!user ? <Login /> : <AfterLogin />} />
+            <Route path="/" element={user ? <Layout user={user} /> : <RequestLogin />}>
               <Route index element={<Home />} />
               <Route path="leaderboard" element={<Leaderboard />} />
               <Route path="quiz" element={<QuizGame />} />
@@ -53,6 +64,7 @@ export default function App() {
               <Route path="admin" element={<AdminPanel />} />
               <Route path="social" element={<Social />} />
             </Route>
+            <Route path="*" element={<Navigate replace to="/" />} />
           </Routes>
         </Suspense>
       </BrowserRouter>

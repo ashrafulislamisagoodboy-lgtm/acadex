@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom';
 import React, { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, Bell, Clock, MapPin, Plus, X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, getDoc } from '../../lib/local';
+import { collection, setDoc, query, orderBy, onSnapshot, serverTimestamp, doc, getDoc } from '../../lib/local';
 import { db, auth } from '../../lib/local';
 
 import './calendar.css';
@@ -56,6 +56,10 @@ export default function Social() {
   const [events, setEvents] = useState<any[]>([]);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const eventRef = React.useRef<ReturnType<typeof doc> | null>(null);
+  const saving = React.useRef(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'agenda'>('grid');
   const [expanded, setExpanded] = useState(false);
@@ -102,17 +106,23 @@ export default function Social() {
 
   const handleAddEvent = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (saving.current) return;
+    saving.current = true; setIsSaving(true); setSaveError('');
     try {
-      await addDoc(collection(db, 'events'), {
+      // Keep the ID on failure: retrying a lost response must not create a second event.
+      eventRef.current ??= doc(collection(db, 'events'));
+      await setDoc(eventRef.current, {
         ...newEvent,
         createdAt: serverTimestamp(),
         userId: auth.currentUser?.uid || 'anonymous'
       });
+      eventRef.current = null;
       setShowModal(false);
       setNewEvent({ title: '', startDate: '', endDate: '', time: '', location: '' });
     } catch (err) {
-      console.error("Error adding event:", err);
-      alert("Failed to add event. Check console for details.");
+      setSaveError(err instanceof Error ? err.message : 'Could not save the event. Please try again.');
+    } finally {
+      saving.current = false; setIsSaving(false);
     }
   };
 
@@ -246,7 +256,7 @@ export default function Social() {
             </div>
             {isAdmin && (
               <button 
-                onClick={() => setShowModal(true)} 
+                onClick={() => { setSaveError(''); setShowModal(true); }}
                 className="bg-butter text-forest px-4 py-2 rounded-full font-bold flex items-center gap-2 hover:bg-butter/90 transition-all shadow-lg shadow-butter/20"
               >
                 <Plus size={20} /> <span>Add Event</span>
@@ -335,12 +345,12 @@ export default function Social() {
           <div className="glass-card-dark border rounded-3xl p-6 w-full max-w-md" role="dialog" aria-modal="true" aria-labelledby="event-dialog-title">
             <div className="flex justify-between items-center mb-6">
               <h2 id="event-dialog-title" className="text-2xl font-black text-butter">Add event</h2>
-              <button onClick={() => setShowModal(false)} className="icon-button text-butter/60 hover:text-butter" aria-label="Close event form">
+              <button disabled={isSaving} onClick={() => setShowModal(false)} className="icon-button text-butter/60 hover:text-butter" aria-label="Close event form">
                 <X size={24} />
               </button>
             </div>
             
-            <form onSubmit={handleAddEvent} className="space-y-4">
+            <form onSubmit={handleAddEvent}><fieldset disabled={isSaving} className="space-y-4">
               <div>
                 <label htmlFor="event-title" className="block text-sm font-bold text-butter/70 mb-1">Event title</label>
                 <input 
@@ -403,10 +413,11 @@ export default function Social() {
                 </div>
               </div>
 
+              {saveError && <p role="alert">{saveError}</p>}
               <button type="submit" className="w-full bg-butter text-forest font-black py-4 rounded-xl mt-4 hover:bg-butter/90 transition-all">
-                Save event
+                {isSaving ? 'Saving…' : 'Save event'}
               </button>
-            </form>
+            </fieldset></form>
           </div>
         </div>, document.body
       )}
