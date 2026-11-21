@@ -3,9 +3,12 @@ import { Calendar as CalendarIcon, Bell, Clock, MapPin, Plus, X, ChevronLeft, Ch
 import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, getDoc } from '../../lib/local';
 import { db, auth } from '../../lib/local';
 
+import MonthSheet from './MonthSheet';
+import { motion, useReducedMotion } from 'motion/react';
 import { eventsInRange, localMidnight } from '../../lib/calendar';
 
 const MonthCard = ({ year, month, isSelected, onClick }: { year: number, month: number, isSelected: boolean, onClick: () => void }) => {
+  const still = useReducedMotion();
   const monthDate = new Date(year, month, 1);
   const monthName = monthDate.toLocaleString('default', { month: 'long' });
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -36,11 +39,12 @@ const MonthCard = ({ year, month, isSelected, onClick }: { year: number, month: 
   }
 
   return (
-    <button
+    <motion.button
+      id={`month-card-${month}`} layoutId={still ? undefined : `month-${year}-${month}`} transition={{duration:.32,ease:[.2,.75,.25,1]}}
       type="button"
       onClick={onClick}
       aria-pressed={isSelected}
-      aria-label={`Open ${monthName} ${year} agenda`}
+      aria-label={`Expand ${monthName} ${year} calendar`}
       className="almanac-month"
     >
       <h3 className="month-title">{monthName} <small>{String(month + 1).padStart(2, '0')}</small></h3>
@@ -50,7 +54,7 @@ const MonthCard = ({ year, month, isSelected, onClick }: { year: number, month: 
       <div className="grid grid-cols-7 text-xs text-center gap-y-2 font-medium">
         {days}
       </div>
-    </button>
+    </motion.button>
   );
 };
 
@@ -59,7 +63,7 @@ export default function Social() {
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'agenda'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'agenda' | 'month'>('grid');
   const [monthDate, setMonthDate] = useState(() => new Date());
   const selectedMonth = monthDate.getMonth();
   const [dayFilter, setDayFilter] = useState<'today' | 'tomorrow' | 'all'>('all');
@@ -142,7 +146,6 @@ export default function Social() {
   const handleMonthClick = (index: number) => {
     setDayFilter('all');
     setMonthDate(new Date(currentYear, index, 1));
-    setViewMode('agenda');
   };
 
   const nextMonth = () => handleMonthClick(selectedMonth + 1);
@@ -188,10 +191,14 @@ export default function Social() {
               year={currentYear} 
               month={i} 
               isSelected={selectedMonth === i}
-              onClick={() => handleMonthClick(i)}
+              onClick={() => { handleMonthClick(i); setViewMode('month'); }}
             />
           ))}
         </div>
+      ) : viewMode === 'month' ? (
+        <MonthSheet key={`${currentYear}-${selectedMonth}`} year={currentYear} month={selectedMonth} events={events} onMove={delta=>handleMonthClick(selectedMonth+delta)} onBack={()=>{
+          setViewMode('grid'); requestAnimationFrame(()=>document.getElementById(`month-card-${selectedMonth}`)?.focus());
+        }} />
       ) : (
         /* Agenda View */
         <div className="space-y-8 max-w-3xl mx-auto">
