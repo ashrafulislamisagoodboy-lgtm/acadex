@@ -114,7 +114,7 @@ body { background: #1c2a47; }
 .desk h1 em, .desk-intro .folio-kicker { color:#183849; }
 .desk-intro { color:#0c1d2b; text-shadow:0 1px 3px #ffffff80; }
 .desk-cta { text-shadow:none; }
-.field-atlas, .card, .glass-card, .question-sheet, .almanac-month, .tab-turn__lens { --sheet:var(--reading-pane); }
+.field-atlas, .card, .glass-card, .question-sheet, .almanac-month { --sheet:var(--reading-pane); }
 .desk-columns > section { background:var(--smoke); color:white; --rule:#ffffff60; }
 .desk-columns .desk-title, .desk-columns .desk-row { border-color:var(--rule); }
 .desk-columns :is(.desk-title > span, .desk-row p, .folio-number) { color:#f4f9ff; }
@@ -149,91 +149,20 @@ body { background: #1c2a47; }
 .record-banner span { display:inline-block; background:var(--reading-pane); padding:.2rem .65rem; border-radius:999px; box-shadow:var(--lip); }
 @media (max-width:700px) { .route-reveal:not([data-page='/']) { border-radius:20px; padding:.65rem; } }
 
-/* Tab turn: the departing glyph is the front of the coin, the destination
-   is its reverse. The lens lives outside the route, so a new tap can replace it. */
-.tab-turn { position:fixed; z-index:75; inset:0; display:grid; place-items:center; overflow:hidden; pointer-events:none; }
-.tab-turn__ripple {
-  position:absolute; left:calc(50% + var(--to-x)); top:calc(50% + var(--to-y));
-  width:68px; aspect-ratio:1; translate:-50% -50%; border-radius:50%; opacity:0;
-  background:radial-gradient(circle closest-side,transparent 82%,color-mix(in srgb,var(--turn-tint) 16%,transparent) 91%,#e6faff74 97%,transparent);
-  border:1px solid #effaff9c;
+/* One small glass catchlight identifies the destination. Nothing travels over
+   the workspace; its keyed route surface simply settles into place. */
+:is(.desktop-nav__item,.mobile-dock__item,.profile-chip)[aria-current='page'] { position:relative; }
+:is(.desktop-nav__item,.mobile-dock__item,.profile-chip)[aria-current='page']::after {
+  content:''; pointer-events:none; position:absolute; bottom:2px; left:50%;
+  width:22px; height:2px; border-radius:2px; background:linear-gradient(90deg,var(--section-tint),#abd8dc,var(--section-tint));
+  transform:translateX(-50%);
 }
-.tab-turn + .app-main { overflow-x:clip; }
-.tab-turn__lens { display:flex; align-items:center; gap:.6rem; padding:.35rem 1.1rem .35rem .35rem; border:1px solid #fffc; border-radius:999px; color:var(--ink); background:var(--sheet); box-shadow:var(--float); backdrop-filter:var(--lens); -webkit-backdrop-filter:var(--lens); perspective:220px; }
-.tab-turn__coin { position:relative; display:block; width:36px; height:36px; transform-style:preserve-3d; }
-.tab-turn__face { position:absolute; inset:0; display:grid; place-items:center; border-radius:50%; border:1px solid #ffffffc9; background:linear-gradient(145deg,#fff,#d7dfed); backface-visibility:hidden; -webkit-backface-visibility:hidden; }
-.tab-turn__back { transform:rotateY(180deg); background:var(--turn-tint); color:white; box-shadow:inset 0 1px 3px #fff8; }
-.tab-turn__title { font:700 .95rem/1 var(--ui); letter-spacing:-.025em; }
-
-/* A short arc of light connects the two tabs, like a reflection travelling
-   along the edge of a pane. The ripple starts only as the badge lands. */
-.tab-turn__track { position:absolute; inset:0; width:100%; height:100%; overflow:visible; fill:none; }
-.tab-turn__track path { stroke:var(--turn-tint); stroke-width:2; stroke-linecap:round; stroke-dasharray:1; }
-.tab-turn__lens { position:absolute; left:0; top:0; offset-path:var(--flight-path); offset-anchor:center; offset-rotate:0deg; background:var(--reading-pane); backdrop-filter:none; -webkit-backdrop-filter:none; }
 @media (prefers-reduced-motion:no-preference) {
-  .tab-turn__track path { animation:light-trace 600ms ease-in-out both; }
-  .tab-turn__ripple { animation:tab-refraction 220ms 415ms ease-out both; }
-  .tab-turn + .app-main .route-stage {
-    --sheet-start:min(8vw, 5rem);
-    animation:section-arrive 360ms cubic-bezier(.18,.72,.25,1);
-  }
-  .tab-turn[data-direction='back'] + .app-main .route-stage { --sheet-start:max(-8vw, -5rem); }
-  .tab-turn__lens { animation:turn-lens 570ms cubic-bezier(.32,.04,.38,1) both; }
-  .tab-turn__coin { animation:turn-coin 300ms 55ms cubic-bezier(.22,.7,.16,1) both; }
-  .tab-turn__title { animation:turn-caption 140ms 65ms ease-out both; }
+  :is(.desktop-nav__item,.mobile-dock__item,.profile-chip)[aria-current='page']::after { animation:catchlight 220ms ease-out; }
+  .route-reveal { animation:glass-settle 220ms cubic-bezier(.18,.76,.27,1); }
 }
-@keyframes turn-lens {
-  0% { offset-distance:0%; opacity:0; transform:scale(.4); }
-  16%, 77% { opacity:1; transform:scale(1); }
-  100% { offset-distance:100%; opacity:0; transform:scale(.38); }
-}
-@keyframes light-trace {
-  0% { stroke-dashoffset:1; opacity:0; }
-  24% { opacity:.7; }
-  78% { stroke-dashoffset:0; opacity:.55; }
-  100% { stroke-dashoffset:0; opacity:0; }
-}
-@keyframes turn-coin { to { transform:rotateY(calc(180deg * var(--turn-direction))); } }
-@keyframes turn-caption { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
-@media (prefers-reduced-motion:reduce) { .tab-turn { display:none; } }
-@keyframes section-arrive {
-  from { opacity:.78; transform:translate3d(var(--sheet-start),4px,0); }
-  to { opacity:1; transform:none; }
-}
-@keyframes tab-refraction {
-  from { transform:scale(.35); opacity:.85; }
-  to { transform:scale(2); opacity:0; }
-}
-
-/* A folded ribbon of glass turns the page. Only this narrow strip travels;
-   the destination beneath stays interactive and never needs a screenshot. */
-.tab-turn__prism {
-  --prism-shear:-12deg;
-  position:absolute; left:0; top:-8%; height:116%; width:clamp(94px,24vw,360px);
-  opacity:0;
-}
-.tab-turn[data-direction='back'] .tab-turn__prism { --prism-shear:12deg; }
-.tab-turn__fold {
-  position:absolute; inset:0; display:grid; place-items:center;
-  transform:skewX(var(--prism-shear));
-  background:linear-gradient(90deg,transparent 0%, color-mix(in srgb,var(--depart-tint) 24%,transparent) 32%, #ffffff63 33%, #ffffff0d 34%,
-    color-mix(in srgb,var(--turn-tint) 34%,transparent) 64%, #ffffffaa 65%, #e6fbff55 66%, transparent 100%);
-}
-.tab-turn__fold svg { width:clamp(42px,7vw,90px); height:auto; color:#fff; opacity:.82; transform:skewX(calc(-1 * var(--prism-shear))); }
-@media (prefers-reduced-motion:no-preference) {
-  .tab-turn__prism { animation:prism-cross 545ms cubic-bezier(.33,.04,.26,.96) both; }
-  .tab-turn[data-direction='back'] .tab-turn__prism { animation-direction:reverse; animation-timing-function:cubic-bezier(.74,.04,.67,.96); }
-  .tab-turn__fold { animation:prism-open 545ms ease-in-out both; }
-}
-@keyframes prism-cross {
-  0% { transform:translate3d(-100%,0,0); opacity:0; }
-  15%, 75% { opacity:1; }
-  100% { transform:translate3d(100vw,0,0); opacity:0; }
-}
-@keyframes prism-open {
-  0%,100% { transform:skewX(var(--prism-shear)) scaleX(.2); }
-  42%,60% { transform:skewX(var(--prism-shear)) scaleX(1); }
-}
+@keyframes catchlight { from { opacity:.4; transform:translateX(-50%) scaleX(.25); } }
+@keyframes glass-settle { from { opacity:.8; transform:translateY(8px); } to { opacity:1; transform:none; } }
 
 /* A readable inset for the calendar import instructions, even over dark hills. */
 .calendar-import.card { padding:clamp(1rem,3vw,2rem); color:#172943; background-color:#f4f8fcf2; }

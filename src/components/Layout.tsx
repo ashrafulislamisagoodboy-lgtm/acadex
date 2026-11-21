@@ -1,10 +1,10 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { User, LogOut, BookOpen } from 'lucide-react';
 import { auth, db, signOut, doc, onSnapshot, type LocalUser } from '../lib/local';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type CSSProperties } from 'react';
 import { cn } from '../lib/utils';
 
-import TabTurn, { sections } from './Common/TabTurn';
+import { sections } from './Common/sections';
 import { WallpaperControl } from './Common/LiveWallpaper';
 
 interface LayoutProps {
@@ -41,7 +41,7 @@ export default function Layout({ user }: LayoutProps) {
   const displayName = userData?.name || user?.displayName || 'Learner';
 
   return (
-    <div className="app-shell min-h-dvh">
+    <div className="app-shell min-h-dvh" style={{ '--section-tint': section.tint } as CSSProperties}>
       <a href="#main-content" className="skip-link">Skip to main content</a>
 
       <header className="app-header">
@@ -62,7 +62,6 @@ export default function Layout({ user }: LayoutProps) {
                 <Link
                   key={item.path}
                   to={item.path}
-                  data-tab-anchor={item.path}
                   aria-current={active ? 'page' : undefined}
                   className={cn('desktop-nav__item', active && 'is-active')}
                 >
@@ -75,7 +74,7 @@ export default function Layout({ user }: LayoutProps) {
 
           <div className="header-actions">
             <WallpaperControl />
-            <Link to={`/profile/${user?.uid}`} data-tab-anchor="/profile" className="profile-chip" aria-label={`Open ${displayName}'s profile`}>
+            <Link to={`/profile/${user?.uid}`} aria-current={isCurrent('/profile') ? 'page' : undefined} className="profile-chip" aria-label={`Open ${displayName}'s profile`}>
               <span className="profile-chip__avatar">
                 {userData?.photoUrl ? (
                   <img src={userData.photoUrl} alt="" referrerPolicy="no-referrer" />
@@ -95,8 +94,6 @@ export default function Layout({ user }: LayoutProps) {
         </div>
       </header>
 
-      <TabTurn section={section} />
-
       <main id="main-content" className="app-main" tabIndex={-1}>
         <div key={location.pathname} className="route-stage">
           <div className="route-reveal" data-page={location.pathname}>
@@ -113,7 +110,6 @@ export default function Layout({ user }: LayoutProps) {
             <Link
               key={item.path}
               to={item.path}
-              data-tab-anchor={item.path}
               aria-current={active ? 'page' : undefined}
               className={cn('mobile-dock__item', active && 'is-active')}
             >

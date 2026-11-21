@@ -23,7 +23,7 @@ app.whenReady().then(async () => {
     assert.ok(login.username && login.password, 'Set preview credentials');
     await evaluate(`fetch('/api/auth/login', {method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify(${JSON.stringify(login)})}).then(r => { if (!r.ok) throw new Error('Preview login failed'); })`);
     await win.loadURL(base + '/'); await ready('.desk');
-    assert.equal(await evaluate("getComputedStyle(document.querySelector('.route-reveal')).animationName"), 'page-in');
+    assert.equal(await evaluate("getComputedStyle(document.querySelector('.route-reveal')).animationName"), 'glass-settle');
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.star-trace')).animationName"), 'trace-ink');
     await evaluate(`document.querySelector('[aria-label="Next atlas plate"]').click()`);
     await ready('.atlas-picture text');
@@ -47,15 +47,9 @@ app.whenReady().then(async () => {
       await writeFile(resolve('artifacts', 'acadex-motion-' + name + '.png'), (await win.webContents.capturePage()).toPNG());
     }
     await evaluate(`document.querySelector('.mobile-dock a[href="/leaderboard"]').click()`);
-    await ready('.tab-turn__coin');
-    assert.equal(await evaluate("document.querySelector('.tab-turn__title').textContent"), 'Ranks');
-    assert.equal(await evaluate("getComputedStyle(document.querySelector('.tab-turn__prism')).animationName"), 'prism-cross');
-    assert.ok(await evaluate("getComputedStyle(document.querySelector('.tab-turn__lens')).offsetPath.startsWith('path(')"), 'Badge follows the drawn arc');
-    assert.equal(await evaluate("getComputedStyle(document.querySelector('.tab-turn__coin')).animationName"), 'turn-coin');
-    assert.equal(await evaluate("getComputedStyle(document.querySelector('.route-stage')).animationName"), 'section-arrive');
-    assert.ok(await evaluate("document.querySelector('.tab-turn').getBoundingClientRect().height >= innerHeight"), 'Transition spans the viewport');
-    assert.equal(await evaluate("getComputedStyle(document.querySelector('.tab-turn__ripple')).animationName"), 'tab-refraction');
-    assert.ok(await evaluate("parseFloat(document.querySelector('.tab-turn').style.getPropertyValue('--to-y')) > 0"), 'Arrival is anchored to the mobile dock');
+    await ready('[data-page="/leaderboard"]');
+    assert.equal(await evaluate("getComputedStyle(document.querySelector('.mobile-dock [aria-current=page]'),'::after').animationName"), 'catchlight');
+    assert.equal(await evaluate("getComputedStyle(document.querySelector('.route-reveal')).animationName"), 'glass-settle');
     await evaluate(`document.querySelector('.mobile-dock a[href="/"]').click()`);
     await ready('.desk');
     win.webContents.debugger.attach('1.3');
@@ -66,7 +60,7 @@ app.whenReady().then(async () => {
     assert.equal(await evaluate("Array.from(document.querySelectorAll('.meadow-scene > span')).every(el => getComputedStyle(el).animationName === 'none')"), true);
     await evaluate("document.querySelector('.mobile-dock a[href=\"/quiz\"]').click()");
     await ready('[data-page="/quiz"]');
-    assert.equal(await evaluate("document.querySelector('.tab-turn') === null"), true);
+    assert.equal(await evaluate("getComputedStyle(document.querySelector('.mobile-dock [aria-current=page]'),'::after').animationName"), 'none');
     console.log('PASS: responsive desk, tab turn, reduced motion, mobile navigation.');
   } catch (error) { console.error(error); win.destroy(); app.exit(1); return; }
   win.destroy(); app.quit();
