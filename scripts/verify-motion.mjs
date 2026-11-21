@@ -48,8 +48,6 @@ app.whenReady().then(async () => {
     }
     await evaluate(`document.querySelector('.mobile-dock a[href="/leaderboard"]').click()`);
     await ready('[data-page="/leaderboard"]');
-    assert.equal(await evaluate("getComputedStyle(document.querySelector('.route-stage')).viewTransitionName"), 'workspace-card');
-    assert.equal(await evaluate("document.documentElement.dataset.shuffle"), 'forward');
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.mobile-dock [aria-current=page]'),'::after').animationName"), 'catchlight');
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.route-reveal')).animationName"), 'glass-settle');
     await evaluate(`document.querySelector('.mobile-dock a[href="/"]').click()`);
@@ -62,7 +60,6 @@ app.whenReady().then(async () => {
     assert.equal(await evaluate("Array.from(document.querySelectorAll('.meadow-scene > span')).every(el => getComputedStyle(el).animationName === 'none')"), true);
     await evaluate("document.querySelector('.mobile-dock a[href=\"/quiz\"]').click()");
     await ready('[data-page="/quiz"]');
-    assert.equal(await evaluate("getComputedStyle(document.querySelector('.route-stage')).viewTransitionName"), 'none');
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.mobile-dock [aria-current=page]'),'::after').animationName"), 'none');
     console.log('PASS: responsive desk, tab turn, reduced motion, mobile navigation.');
   } catch (error) { console.error(error); win.destroy(); app.exit(1); return; }

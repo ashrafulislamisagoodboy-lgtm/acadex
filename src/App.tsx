@@ -1,7 +1,7 @@
-import React, { createContext, useContext, lazy, Suspense, useEffect, useState } from 'react';
-import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
-import { auth, onAuthStateChanged } from './lib/local';
-import { type LocalUser } from './lib/local';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { onAuthStateChanged } from './lib/local';
+import { auth } from './lib/local';
 import Layout from './components/Layout';
 import ErrorBoundary from './components/Common/ErrorBoundary';
 
@@ -23,30 +23,8 @@ function AppLoader() {
   );
 }
 
-const Session = createContext<LocalUser | null>(null);
-function Workspace() {
-  const user = useContext(Session);
-  return user ? <Layout user={user} /> : <Navigate to="/login" replace />;
-}
-function Entry() {
-  return useContext(Session) ? <Navigate to="/" replace /> : <Login />;
-}
-// Data-router links let the browser capture the outgoing view without keeping
-// a second, interactive copy of a quiz, form or profile mounted.
-const router = createBrowserRouter([
-  { path: '/login', element: <Entry /> },
-  { path: '/', element: <Workspace />, children: [
-    { index: true, element: <Home /> },
-    { path: 'leaderboard', element: <Leaderboard /> },
-    { path: 'quiz', element: <QuizGame /> },
-    { path: 'profile/:uid', element: <Profile /> },
-    { path: 'admin', element: <AdminPanel /> },
-    { path: 'social', element: <Social /> },
-  ] },
-]);
-
 export default function App() {
-  const [user, setUser] = useState<LocalUser | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -63,9 +41,21 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <Session.Provider value={user}>
-        <Suspense fallback={<AppLoader />}><RouterProvider router={router} /></Suspense>
-      </Session.Provider>
+      <BrowserRouter>
+        <Suspense fallback={<AppLoader />}>
+          <Routes>
+            <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
+            <Route path="/" element={user ? <Layout user={user} /> : <Navigate to="/login" />}>
+              <Route index element={<Home />} />
+              <Route path="leaderboard" element={<Leaderboard />} />
+              <Route path="quiz" element={<QuizGame />} />
+              <Route path="profile/:uid" element={<Profile />} />
+              <Route path="admin" element={<AdminPanel />} />
+              <Route path="social" element={<Social />} />
+            </Route>
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
     </ErrorBoundary>
   );
 }
