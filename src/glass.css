@@ -35,8 +35,13 @@ body { background: #1c2a47; }
 .live-wallpaper::after { content:''; position:absolute; inset:0; background:linear-gradient(#11252630,#10262048); }
 #root:has(.auth-page, .desk) .live-wallpaper::after { opacity:0; }
 .auth-page .portal-footer { color:#fff; text-shadow:0 1px 4px #142e1a; border-color:#ffffff75; }
-/* The photograph anchors the horizon. Only the transparent weather layers
-   move: the clouds cross the sky while grass bends around its rooted edge. */
+/* Match the 1376 × 768 photograph's cover crop and 52% horizontal position
+   exactly. Only the grassy half is video; the sky and skyline stay still. */
+.meadow-scene { container-type:size; }
+.meadow-photo-plane { position:absolute; width:max(100cqw,179.166667cqh); aspect-ratio:1376/768; left:52%; top:50%; transform:translate(-52%,-50%); }
+.meadow-wind { position:absolute; bottom:0; width:100%; height:50%; object-fit:fill; mask-image:linear-gradient(transparent,#000 8%); }
+.meadow-wind:not([src]) { visibility:hidden; }
+@media (prefers-reduced-motion:reduce) { .meadow-wind { visibility:hidden; } }
 .meadow-cloud { position:absolute; left:0; aspect-ratio:488/164; background:url('/meadow-cloud.webp') center / contain no-repeat; }
 .meadow-cloud--far { width:clamp(110px,15vw,260px); top:18%; opacity:.58; transform:translateX(12vw) scaleX(-1); --cloud-facing:-1; }
 .meadow-cloud--near { width:clamp(160px,24vw,430px); top:5%; opacity:.82; transform:translateX(59vw); --cloud-facing:1; }
